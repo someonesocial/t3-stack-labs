@@ -97,6 +97,7 @@ function clearLines(board:(string|null)[][]): { board:(string|null)[][]; cleared
 }
 
 export default function Tetris() {
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const [board, setBoard] = useState<(string|null)[][]>(() => createBoard());
   const [bag, setBag] = useState<string[]>(() => randomBag());
   const [nextBag, setNextBag] = useState<string[]>(() => randomBag());
@@ -188,10 +189,24 @@ export default function Tetris() {
     return () => { if (loopRef.current) cancelAnimationFrame(loopRef.current); };
   }, [step, tickMs]);
 
-  // Keyboard
+  // Focus game container on mount (so keys are directed) but don't steal if user focused an input.
+  useEffect(() => {
+    if (containerRef.current && !(document.activeElement instanceof HTMLElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.isContentEditable))) {
+      containerRef.current.focus();
+    }
+  }, []);
+
+  // Keyboard (global listener) with preventDefault to stop cursor / scroll movement.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (!running || gameOver || justLocked.current) return;
+      const active = document.activeElement as HTMLElement | null;
+      // Allow normal typing in form fields
+      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) return;
+      const controlKeys = ["ArrowLeft","ArrowRight","ArrowDown","ArrowUp","x"," ","p"]; // include space & p
+      if (!controlKeys.includes(e.key)) return;
+      // prevent default navigation / scroll / button focus movement
+      e.preventDefault();
       if (e.key === "ArrowLeft") {
         const next = { ...piece, col: piece.col - 1 };
         if (canPlace(board, next)) setPiece(next);
@@ -211,7 +226,7 @@ export default function Tetris() {
         setRunning(r => !r);
       }
     }
-    window.addEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, { passive: false });
     return () => window.removeEventListener("keydown", onKey);
   }, [piece, board, lock, hardDrop, running, gameOver]);
 
@@ -268,7 +283,14 @@ export default function Tetris() {
   };
 
   return (
-    <div className="flex flex-col gap-10 md:flex-row">
+    <div
+      ref={containerRef}
+      className="flex flex-col gap-10 md:flex-row outline-none"
+      tabIndex={0}
+      role="application"
+      aria-label="Tetris game area. Use arrow keys to move, up to rotate, space for hard drop, P to pause."
+      onClick={() => containerRef.current?.focus()}
+    >
       <div className="glass relative rounded-xl p-4">
         <div className="grid grid-cols-10 gap-[3px]">
           {displayBoard.map((row, rIdx) => (
