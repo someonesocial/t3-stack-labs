@@ -111,10 +111,10 @@ export default function Tetris() {
   const loopRef = useRef<number | null>(null);
   const lastTime = useRef<number>(0);
 
+  // Upcoming pieces (exclude current). Always take next 5 across remaining bag then nextBag.
   const queue = useMemo<string[]>(() => {
-    const visible = bag.slice(1,5);
-    const need = 4 - Math.min(4, bag.length - 1);
-    return visible.concat(nextBag.slice(0, need));
+    const upcoming = bag.slice(1).concat(nextBag);
+    return upcoming.slice(0, 5);
   }, [bag, nextBag]);
 
   const spawnNext = useCallback(() => {
@@ -314,17 +314,30 @@ export default function Tetris() {
         </div>
         <div className="glass rounded-xl p-4">
           <h2 className="mb-2 text-lg font-semibold">Next Pieces</h2>
-          <div className="flex gap-3">
-            {queue.map((t,i)=>(
-              <div key={i} className="flex flex-col items-center gap-1">
-                <div className="grid auto-rows-[14px] grid-cols-4 gap-[2px] p-1">
-                  {SHAPES[t]!.map((row,r)=>(row.map((cell,c)=>(
-                    <div key={r+":"+c} className={clsx("h-[14px] w-[14px] rounded-[2px] bg-black/40", cell && `bg-gradient-to-br ${COLORS[t]}`)} />
-                  ))))}
+          <div className="flex gap-4">
+            {queue.map((t,i)=> {
+              const shape = SHAPES[t]!;
+              return (
+                <div key={i} className="flex flex-col items-center gap-1">
+                  <div className="flex flex-col gap-[2px] p-1">
+                    {shape.map((row,r) => (
+                      <div key={r} className="flex gap-[2px]">
+                        {row.map((cell,c)=>(
+                          <div
+                            key={c}
+                            className={clsx(
+                              "h-[14px] w-[14px] rounded-[2px] bg-black/40",
+                              cell && `bg-gradient-to-br ${COLORS[t]}`
+                            )}
+                          />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                  <span className="text-[10px] text-white/60">{t}</span>
                 </div>
-                <span className="text-[10px] text-white/60">{t}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
