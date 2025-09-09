@@ -2,30 +2,36 @@ import React from "react";
 import { GlassCard } from "./glass-card";
 
 const features = [
-  {
-    title: "Superjson",
-    desc: "Rich data types (Dates, Maps) across network boundaries without manual transforms.",
-  },
-  {
-    title: "Optimistic UX",
-    desc: "Build snappy interfaces by updating UI before round trip returns.",
-  },
-  {
-    title: "Validation",
-    desc: "Zod-powered schemas ensure only valid data enters your system.",
-  },
-  {
-    title: "Hydration",
-    desc: "RSC hydration helpers keep initial loads fast and interactive.",
-  },
-  {
-    title: "Batching",
-    desc: "Multiple tRPC calls merge into a single HTTP request reducing overhead.",
-  },
-  {
-    title: "Refactoring Safety",
-    desc: "Rename a field in one place; instantly reflected across client calls.",
-  },
+    {
+      title: "Interface Whisperer",
+      description: "Crafting calm, breathable UIs with motion that enhances—not distracts.",
+      icon: "🌀",
+    },
+    {
+      title: "Type Safety Gremlin",
+      description: "If it compiles, it probably works. If it doesn’t, I make the compiler cry first.",
+      icon: "🧩",
+    },
+    {
+      title: "Latency Illusionist",
+      description: "Optimistic updates + subtle skeletons = users forget the network exists.",
+      icon: "🎩",
+    },
+    {
+      title: "SVG Tinkerer",
+      description: "Procedural blobs, gradients, and accessible vector experiments.",
+      icon: "🖊️",
+    },
+    {
+      title: "Design Dev Bridge",
+      description: "Token-driven theming & glass layers that stay consistent under change.",
+      icon: "🌉",
+    },
+    {
+      title: "Continuous Learning",
+      description: "Dual student mindset: iterate, document, reflect, ship again.",
+      icon: "📚",
+    },
 ];
 
 export function FeatureGrid() {
@@ -33,19 +39,24 @@ export function FeatureGrid() {
     <section className="mx-auto max-w-6xl px-6 py-24">
       <div className="mb-10 flex items-end justify-between gap-4">
         <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-          Why this stack?
+          What I focus on
         </h2>
         <a
-          href="/learn"
+          href="/projects"
           className="text-sm font-medium text-white/60 underline-offset-4 hover:text-white hover:underline"
         >
-          Dive deeper
+          See projects
         </a>
       </div>
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {features.map((f) => (
-          <GlassCard key={f.title} title={f.title} className="h-full" subtitle="">
-            <p>{f.desc}</p>
+          <GlassCard
+            key={f.title}
+            title={f.title}
+            className="h-full"
+            subtitle={f.icon}
+          >
+            <p>{f.description}</p>
           </GlassCard>
         ))}
       </div>

@@ -15,20 +15,20 @@ export default async function Home() {
         <section className="mx-auto w-full max-w-6xl px-6">
           <div className="grid grid-cols-1 gap-8 pb-24 pt-8 lg:grid-cols-3">
             <GlassCard
-              title="Live Data Sandbox"
-              subtitle="tRPC + React Query"
+              title="Interaction Lab"
+              subtitle="Optimistic demo"
               className="lg:col-span-2"
             >
               <p className="mb-4 text-white/70">
-                Try creating posts below. This uses a mock in-memory store now
-                (will migrate to a real DB in a later module). All procedures
-                are fully typed end-to-end.
+                A tiny post tool showing optimistic updates, validation, and
+                type‑safe calls. It currently uses an in‑memory list (because
+                not every prototype needs a database yet).
               </p>
               <LatestPost />
             </GlassCard>
-            <GlassCard title="Hello" subtitle="Server Prefetch">
+            <GlassCard title="Server Hello" subtitle="Prefetched">
               <p className="text-white/70">
-                Greeting fetched on the server: <br />
+                Server rendered greeting: <br />
                 <span className="font-mono text-white">{hello.greeting}</span>
               </p>
             </GlassCard>
@@ -36,7 +36,7 @@ export default async function Home() {
         </section>
         <FeatureGrid />
         <footer className="mx-auto w-full max-w-6xl px-6 pb-16 text-center text-xs text-white/40">
-          Built as a learning playground – evolve it module by module.
+          Built as a personal learning lab – shipped piece by piece.
         </footer>
       </main>
     </HydrateClient>
