@@ -19,16 +19,16 @@ export function GlassCard({
   footer,
   as = "div",
 }: GlassCardProps) {
-  const Component = as as React.ElementType;
+  const Component = as ?? "div";
   return (
     <Component
       className={cn(
         "glass glass-hover relative flex flex-col overflow-hidden rounded-2xl p-6",
-        "before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_30%_20%,hsla(280,100%,60%,0.15),transparent_60%)]",
-        className,
+  "before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_30%_20%,hsla(280,100%,60%,0.15),transparent_60%)]",
+  className ?? "",
       )}
     >
-      {(title || subtitle) && (
+  {(title ?? subtitle) && (
         <header className="mb-4">
           {title && (
             <h3 className="text-lg font-semibold tracking-tight text-white/90">

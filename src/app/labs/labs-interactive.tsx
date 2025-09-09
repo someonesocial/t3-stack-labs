@@ -186,7 +186,7 @@ export function LabsInteractive() {
                     </div>
                     {create.error && (
                       <p className="text-xs text-rose-300">
-                        {create.error.data?.zodError?.fieldErrors?.name?.[0] ||
+                        {create.error.data?.zodError?.fieldErrors?.name?.[0] ??
                           create.error.message}
                       </p>
                     )}

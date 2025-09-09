@@ -1,9 +1,9 @@
 import "~/styles/globals.css";
 
 import { type Metadata } from "next";
-import { Geist } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
+import Link from "next/link";
 import { AnimatedBackground } from "./_components/ui/background";
 
 export const metadata: Metadata = {
@@ -24,22 +24,18 @@ export const metadata: Metadata = {
   },
 };
 
-const geist = Geist({
-  subsets: ["latin"],
-  variable: "--font-geist-sans",
-});
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geist.variable}`}>
+  <html lang="en">
     <body className="min-h-screen font-sans text-white antialiased">
         <TRPCReactProvider>
       <AnimatedBackground />
           <header className="border-b border-white/10 bg-black/40 backdrop-blur">
             <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3 text-sm">
-              <a href="/" className="font-semibold tracking-wide">Your Name</a>
+              <Link href="/" className="font-semibold tracking-wide">Your Name</Link>
               <ul className="flex items-center gap-6">
                 <li><a href="/about" className="text-white/70 hover:text-white">About</a></li>
                 <li><a href="/projects" className="text-white/70 hover:text-white">Projects</a></li>

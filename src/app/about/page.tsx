@@ -6,7 +6,7 @@ export default function AboutPage() {
       <section className="space-y-4">
         <h1 className="text-4xl font-bold tracking-tight">About Me</h1>
         <p className="text-white/70 leading-relaxed text-balance">
-          I'm a web engineer focused on building resilient, accessible, and performant experiences.
+          I&apos;m a web engineer focused on building resilient, accessible, and performant experiences.
           This site is both a portfolio and a living sandbox—each section demonstrates patterns in the
           modern TypeScript full‑stack ecosystem (T3 stack). Rather than static case studies, I expose
           real interactive examples you can inspect and learn from.
