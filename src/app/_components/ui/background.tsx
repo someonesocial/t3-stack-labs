@@ -19,6 +19,8 @@ export function AnimatedBackground() {
       {/* Soft global veil for readability */}
       <div className="absolute inset-0 bg-[linear-gradient(115deg,hsl(260_70%_6%/.65),hsl(260_70%_4%/.9))] mix-blend-normal" />
       <div className="absolute inset-0 backdrop-blur-[2px]" />
+  {/* Vertical extension (invisible spacer gradient) for very tall pages */}
+  <div className="absolute left-0 top-full h-[150vh] w-full bg-[linear-gradient(to_bottom,hsl(255_70%_5%/0.95),hsl(255_70%_5%/0.9))]" />
     </div>
   );
 }
