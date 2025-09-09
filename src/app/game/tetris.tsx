@@ -111,6 +111,8 @@ export default function Tetris() {
   const [gameOver, setGameOver] = useState(false);
   const loopRef = useRef<number | null>(null);
   const lastTime = useRef<number>(0);
+  // Prevent race where piece moves during the same frame it locks (causing duplicate-looking tiles)
+  const justLocked = useRef(false);
 
   // Upcoming pieces (exclude current). Always take next 5 across remaining bag then nextBag.
   const queue = useMemo<string[]>(() => {
@@ -140,6 +142,8 @@ export default function Tetris() {
   }, [bag, nextBag]);
 
   const lock = useCallback((p:ActivePiece) => {
+    if (justLocked.current) return; // already locking this frame
+    justLocked.current = true;
     const merged = merge(board, p);
     const { board: clearedBoard, cleared } = clearLines(merged);
     if (cleared) {
@@ -147,7 +151,11 @@ export default function Tetris() {
       setLines(l => l + cleared);
     }
     setBoard(clearedBoard);
-    spawnNext(clearedBoard);
+    const spawned = spawnNext(clearedBoard);
+    if (spawned) {
+      // release guard on next microtask so movement keys after spawn apply to new piece only
+      queueMicrotask(() => { justLocked.current = false; });
+    }
   }, [board, spawnNext]);
 
   const hardDrop = useCallback(() => {
@@ -183,7 +191,7 @@ export default function Tetris() {
   // Keyboard
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (!running || gameOver) return;
+      if (!running || gameOver || justLocked.current) return;
       if (e.key === "ArrowLeft") {
         const next = { ...piece, col: piece.col - 1 };
         if (canPlace(board, next)) setPiece(next);
@@ -246,13 +254,15 @@ export default function Tetris() {
   };
 
   // Helpers for on-screen controls
-  const attempt = (next: ActivePiece) => { if (canPlace(board, next)) setPiece(next); };
+  const attempt = (next: ActivePiece) => { if (!justLocked.current && canPlace(board, next)) setPiece(next); };
   const move = (dx: number) => attempt({ ...piece, col: piece.col + dx });
   const softDrop = () => {
     const next = { ...piece, row: piece.row + 1 };
+    if (justLocked.current) return;
     if (canPlace(board, next)) setPiece(next); else lock(piece);
   };
   const rotateCW = () => {
+    if (justLocked.current) return;
     const rotated = rotate(piece.shape);
     attempt({ ...piece, shape: rotated });
   };
