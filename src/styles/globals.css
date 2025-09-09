@@ -8,9 +8,20 @@
 /* Global background + glass utilities */
 html, body {
   min-height: 100%;
-  background: radial-gradient(circle at 20% 20%, hsl(280 100% 8%), hsl(250 65% 4%));
+  /* Layered background ensures continuous depth far below fold */
+  background:
+    radial-gradient(circle at 18% 18%, hsl(280 90% 14% / 0.9), transparent 62%),
+    radial-gradient(circle at 82% 75%, hsl(310 70% 18% / 0.6), transparent 60%),
+    radial-gradient(circle at 50% 130%, hsl(255 70% 14% / 0.55), transparent 65%),
+    linear-gradient(to bottom, hsl(260 70% 7%), hsl(258 70% 6%) 35%, hsl(256 70% 5%) 65%, hsl(254 70% 4%) 100%);
+  background-attachment: fixed, fixed, fixed, scroll; /* keep glow layers stable while allowing depth fade */
+  background-repeat: no-repeat;
+  background-color: hsl(255 70% 5%);
   -webkit-font-smoothing: antialiased;
 }
+
+html { height: 100%; }
+body { min-height: 100vh; }
 
 /* Animated gradient blobs (used by Background component) */
 @keyframes blobMove {

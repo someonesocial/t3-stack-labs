@@ -1,4 +1,4 @@
-export const metadata = { title: "Projects — Your Name" };
+export const metadata = { title: "Projects — Paul Klemm" };
 
 interface ProjectMeta {
   title: string;

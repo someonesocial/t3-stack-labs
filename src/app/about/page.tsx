@@ -1,4 +1,4 @@
-export const metadata = { title: "About — Your Name" };
+export const metadata = { title: "About — Paul Klemm" };
 
 export default function AboutPage() {
   return (
@@ -8,7 +8,7 @@ export default function AboutPage() {
         <p className="text-white/70 leading-relaxed text-balance">
           I&apos;m a web engineer focused on building resilient, accessible, and performant experiences.
           This site is both a portfolio and a living sandbox—each section demonstrates patterns in the
-          modern TypeScript full‑stack ecosystem (T3 stack). Rather than static case studies, I expose
+          modern TypeScript full‑stack ecosystem. Rather than static case studies, I expose
           real interactive examples you can inspect and learn from.
         </p>
       </section>
