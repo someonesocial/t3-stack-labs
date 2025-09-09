@@ -108,6 +108,7 @@ export default function Tetris() {
   const [score, setScore] = useState(0);
   const [lines, setLines] = useState(0);
   const [running, setRunning] = useState(true);
+  const [gameOver, setGameOver] = useState(false);
   const loopRef = useRef<number | null>(null);
   const lastTime = useRef<number>(0);
 
@@ -117,7 +118,7 @@ export default function Tetris() {
     return upcoming.slice(0, 5);
   }, [bag, nextBag]);
 
-  const spawnNext = useCallback(() => {
+  const spawnNext = useCallback((currentBoard: (string|null)[][]) => {
     let b = bag.slice(1);
     let nb = nextBag;
     if (b.length === 0) {
@@ -125,9 +126,17 @@ export default function Tetris() {
       nb = randomBag();
       setNextBag(nb);
     }
-    setBag(b);
     const type = b[0]! || nb[0]!;
-    setPiece({ shape: SHAPES[type]!, type, row: 0, col: 3 });
+    const candidate: ActivePiece = { shape: SHAPES[type]!, type, row: 0, col: 3 };
+    // If cannot place new piece -> game over
+    if (!canPlace(currentBoard, candidate)) {
+      setGameOver(true);
+      setRunning(false);
+      return false;
+    }
+    setBag(b);
+    setPiece(candidate);
+    return true;
   }, [bag, nextBag]);
 
   const lock = useCallback((p:ActivePiece) => {
@@ -138,7 +147,7 @@ export default function Tetris() {
       setLines(l => l + cleared);
     }
     setBoard(clearedBoard);
-    spawnNext();
+    spawnNext(clearedBoard);
   }, [board, spawnNext]);
 
   const hardDrop = useCallback(() => {
@@ -148,14 +157,14 @@ export default function Tetris() {
   }, [piece, board, lock]);
 
   const step = useCallback(() => {
-    if (!running) return;
+    if (!running || gameOver) return;
     const next = { ...piece, row: piece.row + 1 };
     if (canPlace(board, next)) {
       setPiece(next);
     } else {
       lock(piece);
     }
-  }, [piece, board, lock, running]);
+  }, [piece, board, lock, running, gameOver]);
 
   // Game loop
   useEffect(() => {
@@ -174,7 +183,7 @@ export default function Tetris() {
   // Keyboard
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (!running) return;
+      if (!running || gameOver) return;
       if (e.key === "ArrowLeft") {
         const next = { ...piece, col: piece.col - 1 };
         if (canPlace(board, next)) setPiece(next);
@@ -196,7 +205,7 @@ export default function Tetris() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [piece, board, lock, hardDrop, running]);
+  }, [piece, board, lock, hardDrop, running, gameOver]);
 
   // Ghost piece
   const ghost = useMemo(() => {
@@ -233,6 +242,7 @@ export default function Tetris() {
     setLines(0);
     setPiece({ shape: SHAPES[Object.keys(SHAPES)[0]!]!, type: Object.keys(SHAPES)[0]!, row: 0, col: 3 });
     setRunning(true);
+    setGameOver(false);
   };
 
   // Helpers for on-screen controls
@@ -282,6 +292,15 @@ export default function Tetris() {
           ))}
         </div>
         <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-white/10" />
+        {gameOver && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 rounded-xl bg-black/70 p-6 text-center">
+            <h2 className="text-2xl font-bold text-white">Game Over</h2>
+            <p className="text-sm text-white/60">Score: <span className="text-white font-semibold">{score}</span> · Lines: <span className="text-white font-semibold">{lines}</span></p>
+            <div className="flex gap-3">
+              <button onClick={reset} className="glass-hover rounded-md border border-white/30 bg-white/10 px-4 py-2 text-xs font-medium text-white">Play Again</button>
+            </div>
+          </div>
+        )}
       </div>
       <div className="flex flex-1 flex-col gap-6">
         <div className="glass rounded-xl p-4">
@@ -295,20 +314,20 @@ export default function Tetris() {
           <div className="mt-4 flex flex-wrap gap-2">
             <button onClick={()=>setTickMs(m=>Math.max(150, m-100))} className="glass-hover rounded-md border border-white/20 bg-white/5 px-3 py-1 text-xs">Faster</button>
             <button onClick={()=>setTickMs(m=>Math.min(1200, m+100))} className="glass-hover rounded-md border border-white/20 bg-white/5 px-3 py-1 text-xs">Slower</button>
-            <button onClick={()=>setRunning(r=>!r)} className="glass-hover rounded-md border border-white/20 bg-white/5 px-3 py-1 text-xs">{running?"Pause":"Resume"}</button>
+            <button onClick={()=>!gameOver && setRunning(r=>!r)} disabled={gameOver} className="glass-hover rounded-md border border-white/20 bg-white/5 px-3 py-1 text-xs disabled:opacity-40 disabled:cursor-not-allowed">{running?"Pause":"Resume"}</button>
             <button onClick={reset} className="glass-hover rounded-md border border-white/20 bg-white/5 px-3 py-1 text-xs">Reset</button>
             <button onClick={hardDrop} className="glass-hover rounded-md border border-white/20 bg-white/5 px-3 py-1 text-xs">Hard Drop</button>
           </div>
           <p className="mt-4 text-xs text-white/50">Controls: ← → move, ↑ rotate, ↓ soft drop, Space hard drop, P pause.</p>
           <div className="mt-5 flex flex-col items-center gap-3">
             <div className="flex gap-2">
-              <button onClick={rotateCW} className="glass-hover rounded-md border border-white/20 bg-white/5 px-4 py-2 text-xs">Rotate</button>
-              <button onClick={softDrop} className="glass-hover rounded-md border border-white/20 bg-white/5 px-4 py-2 text-xs">Soft ↓</button>
-              <button onClick={hardDrop} className="glass-hover rounded-md border border-white/20 bg-white/5 px-4 py-2 text-xs">Hard ↓</button>
+              <button onClick={rotateCW} disabled={gameOver} className="glass-hover rounded-md border border-white/20 bg-white/5 px-4 py-2 text-xs disabled:opacity-40 disabled:cursor-not-allowed">Rotate</button>
+              <button onClick={softDrop} disabled={gameOver} className="glass-hover rounded-md border border-white/20 bg-white/5 px-4 py-2 text-xs disabled:opacity-40 disabled:cursor-not-allowed">Soft ↓</button>
+              <button onClick={hardDrop} disabled={gameOver} className="glass-hover rounded-md border border-white/20 bg-white/5 px-4 py-2 text-xs disabled:opacity-40 disabled:cursor-not-allowed">Hard ↓</button>
             </div>
             <div className="flex items-center gap-4">
-              <button onClick={()=>move(-1)} className="glass-hover rounded-md border border-white/20 bg-white/5 px-4 py-2 text-xs">←</button>
-              <button onClick={()=>move(1)} className="glass-hover rounded-md border border-white/20 bg-white/5 px-4 py-2 text-xs">→</button>
+              <button onClick={()=>move(-1)} disabled={gameOver} className="glass-hover rounded-md border border-white/20 bg-white/5 px-4 py-2 text-xs disabled:opacity-40 disabled:cursor-not-allowed">←</button>
+              <button onClick={()=>move(1)} disabled={gameOver} className="glass-hover rounded-md border border-white/20 bg-white/5 px-4 py-2 text-xs disabled:opacity-40 disabled:cursor-not-allowed">→</button>
             </div>
           </div>
         </div>
