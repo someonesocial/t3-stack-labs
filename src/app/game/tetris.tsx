@@ -9,7 +9,7 @@ const VISIBLE_ROWS = 20;
 
 // Tetromino shapes (matrix of 1s)
 const SHAPES: Record<string, number[][]> = {
-  I: [ [1,1,1,1] ],
+  I: [ [1,1,1,1],[0,0,0,0] ],
   O: [ [1,1],[1,1] ],
   T: [ [1,1,1],[0,1,0] ],
   S: [ [0,1,1],[1,1,0] ],
