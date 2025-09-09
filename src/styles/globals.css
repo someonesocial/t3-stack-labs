@@ -1,6 +1,55 @@
 @import "tailwindcss";
 
-@theme {
+:root {
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+/* Global background + glass utilities */
+html, body {
+  min-height: 100%;
+  background: radial-gradient(circle at 20% 20%, hsl(280 100% 8%), hsl(250 65% 4%));
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Animated gradient blobs (used by Background component) */
+@keyframes blobMove {
+  0% { transform: translate3d(0,0,0) scale(1); }
+  33% { transform: translate3d(15%, -10%, 0) scale(1.15); }
+  66% { transform: translate3d(-10%, 10%, 0) scale(0.9); }
+  100% { transform: translate3d(0,0,0) scale(1); }
+}
+
+.glass {
+  background: linear-gradient(
+      135deg,
+      hsla(0 0% 100% / 0.08),
+      hsla(0 0% 100% / 0.02)
+    );
+  border: 1px solid hsla(0 0% 100% / 0.12);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: 0 4px 24px -4px hsl(280 100% 2% / 0.6), 0 0 0 1px hsl(0 0% 100% / 0.04) inset;
+}
+
+.glass-hover {
+  transition: background 220ms, border-color 220ms, transform 300ms;
+}
+.glass-hover:hover {
+  background: linear-gradient(
+      135deg,
+      hsla(0 0% 100% / 0.14),
+      hsla(0 0% 100% / 0.04)
+    );
+  border-color: hsla(0 0% 100% / 0.2);
+}
+
+/* Scrollbar subtle styling (webkit) */
+*::-webkit-scrollbar { width: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: hsl(0 0% 100% / 0.12); border-radius: 999px; }
+*::-webkit-scrollbar-thumb:hover { background: hsl(0 0% 100% / 0.24); }
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-safe\:animate-none { animation: none !important; }
 }

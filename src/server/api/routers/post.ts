@@ -22,6 +22,12 @@ export const postRouter = createTRPCRouter({
         greeting: `Hello ${input.text}`,
       };
     }),
+  /**
+   * Return all posts (demo of simple query returning an array)
+   */
+  list: publicProcedure.query(() => {
+    return posts;
+  }),
 
   create: publicProcedure
     .input(z.object({ name: z.string().min(1) }))
