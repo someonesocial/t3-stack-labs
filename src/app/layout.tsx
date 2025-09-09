@@ -30,7 +30,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
   <html lang="en">
-    <body className="min-h-screen font-sans text-white antialiased">
+  <body className="min-h-screen font-sans text-white antialiased relative flex flex-col">
         <TRPCReactProvider>
       <AnimatedBackground />
           <header className="border-b border-white/10 bg-black/40 backdrop-blur">
@@ -46,7 +46,7 @@ export default function RootLayout({
               </ul>
             </nav>
           </header>
-          <div>{children}</div>
+          <div className="flex-1 w-full">{children}</div>
         </TRPCReactProvider>
       </body>
     </html>
