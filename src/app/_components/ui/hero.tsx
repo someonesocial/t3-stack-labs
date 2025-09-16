@@ -11,7 +11,7 @@ export function Hero() {
         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />Dual Student • Online Media @ Hansgrohe
       </p>
       <h1 className="max-w-4xl bg-gradient-to-br from-white via-white to-white/60 bg-clip-text text-5xl font-extrabold leading-tight text-transparent sm:text-6xl md:text-7xl">
-        Life is Waterfull. Your web should be, too.
+        Life is waterful. Your web should be, too.
       </h1>
       <p className="max-w-2xl text-balance text-lg text-white/60 md:text-xl">
         Hi, I&apos;m Paul, a dual online media student turning time in front of a computer into accessible, animated web things. This site is my laboratory: motion experiments, SVG wizardry, type‑safe APIs, and a few jokes to keep the build pipeline hydrated.
