@@ -301,7 +301,7 @@ export function LabsInteractive() {
 
   <GlassCard id="labs-demo-like" title="Optimistic like toggle" subtitle="Optimistic updates across multiple caches with rollback on server error; failure chance is adjustable.">
           <ul className="space-y-2">
-            {posts.slice(0, 6).map((p) => (
+            {posts.map((p) => (
               <li key={p.id} className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-sm">
                 <span className="text-white/80">#{p.id} — {p.name}</span>
                 <button
