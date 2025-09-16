@@ -43,9 +43,7 @@ export default async function ModuleChecklist({ modules, openId }: Props) {
           <p className="text-xs text-white/50">{progress}% complete</p>
           <div className="text-[11px] text-white/60">{done.length}/{modules.length} done</div>
         </div>
-        <div className="mb-6 h-2 w-full overflow-hidden rounded-full bg-white/10">
-          <div className="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-400 transition-all" style={{ width: `${progress}%` }} />
-        </div>
+        {/* Progress bar removed to avoid duplication with header progress */}
         <ol className="space-y-2">
           {modules.map((m, i) => {
             const checked = done.includes(m.id);
