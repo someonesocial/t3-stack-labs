@@ -7,11 +7,11 @@ import Link from "next/link";
 import { AnimatedBackground } from "./_components/ui/background";
 
 export const metadata: Metadata = {
-  title: "Paul Klemm — Web Engineer",
+  title: "Paul Klemm",
   description: "Portfolio & interactive labs exploring modern type‑safe full‑stack web engineering.",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
   openGraph: {
-    title: "Paul Klemm — Web Engineer",
+    title: "Paul Klemm",
     description: "Interactive portfolio & learning labs (tRPC · React · TypeScript · Tailwind)",
     url: "https://example.com",
     siteName: "Paul Klemm Portfolio",
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Paul Klemm — Web Engineer",
+    title: "Paul Klemm",
     description: "Interactive portfolio & learning labs (tRPC · React · TypeScript · Tailwind)",
   },
 };
