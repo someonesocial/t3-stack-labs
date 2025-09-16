@@ -174,7 +174,7 @@ export default async function LearnPage({ searchParams }: { searchParams?: { [ke
       <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 py-16">
         <header className="space-y-4">
           <h1 className="text-4xl font-bold tracking-tight">Learning Journey</h1>
-          <p className="text-lg text-white/70">{hello.greeting}! Learn by moving step-by-step through the stack, with embedded visuals and fully server-rendered progress.</p>
+          <p className="text-lg text-white/70">{hello.greeting}! Learn by moving step-by-step through the stack.</p>
           <div className="glass rounded-xl p-4">
             <div className="mb-1 flex items-center justify-between text-xs text-white/60">
               <span>Overall progress</span>
