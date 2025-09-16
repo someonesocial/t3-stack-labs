@@ -155,14 +155,15 @@ const modules = [
   },
 ];
 
-export default async function LearnPage({ searchParams }: { searchParams?: { [key: string]: string | string[] | undefined } }) {
+export default async function LearnPage({ searchParams }: { searchParams?: Promise<{ [key: string]: string | string[] | undefined }> }) {
   void api.post.list.prefetch();
   const hello = await api.post.hello({ text: "Learner" });
   const cookieStore = (await cookies()) as any;
   let done: string[] = [];
   try { done = JSON.parse(cookieStore.get("learn-modules")?.value ?? "[]"); } catch {}
   const progress = Math.round(((done?.length ?? 0) / modules.length) * 100);
-  const openId = typeof searchParams?.step === "string" ? searchParams?.step : null;
+  const sp = (await searchParams) ?? {};
+  const openId = typeof sp.step === "string" ? sp.step : null;
   async function resetProgress() {
     "use server";
     const c = (await cookies()) as any;
