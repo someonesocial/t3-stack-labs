@@ -122,6 +122,21 @@ export function LabsInteractive() {
   const maxChars = 40;
   const remaining = maxChars - name.length;
 
+  // Support deep linking from Learn page: ?demo=latest|create|list|search|infinite|like
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const target = params.get("demo");
+    if (!target) return;
+    const el = document.getElementById(`labs-demo-${target}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      el.classList.add("ring-2", "ring-cyan-400/60");
+      const t = setTimeout(() => el.classList.remove("ring-2", "ring-cyan-400/60"), 1600);
+      return () => clearTimeout(t);
+    }
+  }, []);
+
   return (
     <main className="mx-auto max-w-6xl px-6 py-20">
       <header className="mb-10 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -145,15 +160,15 @@ export function LabsInteractive() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-  <GlassCard title="Latest post" subtitle="Demonstrates a typed TRPC suspense query that retrieves the most recent post.">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+  <GlassCard id="labs-demo-latest" title="Latest post" subtitle="Demonstrates a typed TRPC suspense query that retrieves the most recent post.">
           <p className="text-white/70">Latest: {latest ? latest.name : "— none —"}</p>
           <div className="mt-3">
             <pre className="max-h-40 overflow-auto rounded bg-black/40 p-3 text-[11px] text-white/70">{`const [latest] = api.post.getLatest.useSuspenseQuery();`}</pre>
           </div>
         </GlassCard>
 
-  <GlassCard title="Create post" subtitle="Create a post via a TRPC mutation; optionally simulate network latency for UX testing.">
+  <GlassCard id="labs-demo-create" title="Create post" subtitle="Create a post via a TRPC mutation; optionally simulate network latency for UX testing.">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -209,7 +224,7 @@ export function LabsInteractive() {
           </div>
         </GlassCard>
 
-  <GlassCard title="List posts" subtitle="Fetch all posts and delete items; use cache invalidation to refetch.">
+  <GlassCard id="labs-demo-list" title="List posts" subtitle="Fetch all posts and delete items; use cache invalidation to refetch.">
           <ul className="space-y-2">
             {posts.length === 0 && <li className="text-white/50 text-sm">No posts yet.</li>}
             {posts.map((p) => (
@@ -239,7 +254,7 @@ export function LabsInteractive() {
           </div>
         </GlassCard>
 
-  <GlassCard title="Search posts" subtitle="Debounced client input paired with a TRPC query that filters posts by title.">
+  <GlassCard id="labs-demo-search" title="Search posts" subtitle="Debounced client input paired with a TRPC query that filters posts by title.">
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -263,7 +278,7 @@ export function LabsInteractive() {
           {/* copy button removed */}
         </GlassCard>
 
-  <GlassCard title="Infinite posts" subtitle="Cursor-based pagination using useInfiniteQuery with a nextCursor from the API.">
+  <GlassCard id="labs-demo-infinite" title="Infinite posts" subtitle="Cursor-based pagination using useInfiniteQuery with a nextCursor from the API.">
           <ul className="space-y-2">
             {infiniteItems.map((p) => (
               <li key={p.id} className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-sm">
@@ -284,7 +299,7 @@ export function LabsInteractive() {
           </div>
         </GlassCard>
 
-  <GlassCard title="Optimistic like toggle" subtitle="Optimistic updates across multiple caches with rollback on server error; failure chance is adjustable.">
+  <GlassCard id="labs-demo-like" title="Optimistic like toggle" subtitle="Optimistic updates across multiple caches with rollback on server error; failure chance is adjustable.">
           <ul className="space-y-2">
             {posts.slice(0, 6).map((p) => (
               <li key={p.id} className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-sm">
