@@ -1,200 +1,325 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "~/trpc/react";
 import { useLocalStorage } from "./use-local-storage";
+import { GlassCard } from "../_components/ui/glass-card";
 
-interface Step {
-  id: string;
-  title: string;
-  body: string;
+function useDebouncedValue<T>(value: T, delay = 300) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
 }
 
-const introSteps: Step[] = [
-  {
-    id: "query",
-    title: "1. Run a typed query",
-    body: "Below we call post.getLatest with full type safety. Try creating a post and watch the UI update.",
-  },
-  {
-    id: "mutation",
-    title: "2. Try an optimistic mutation",
-    body: "Create posts quickly; the interface updates instantly before the server responds.",
-  },
-  {
-    id: "validation",
-    title: "3. Trigger validation",
-    body: "Submit an empty title to see Zod-driven validation feedback.",
-  },
-];
-
-const codeSamples: Record<string, string> = {
-  query: `// server router
-post: postRouter.getLatest()
-
-// client
-const [latest] = api.post.getLatest.useSuspenseQuery();`,
-  mutation: `// mutation definition
-create: publicProcedure
-  .input(z.object({ name: z.string().min(1) }))
-  .mutation(({ input }) => { /* create */ })
-
-// client usage
-const create = api.post.create.useMutation();
-create.mutate({ name: "Hello" });`,
-  validation: `// zod schema example
-z.object({ name: z.string().min(1, 'Title required') })
-
-// handling error
-create.error?.data?.zodError`,
-};
+// removed CopyButton to simplify the UI
 
 export function LabsInteractive() {
-  const [active, setActive] = useLocalStorage("labs-active-step", "query");
-  const [completed, setCompleted] = useLocalStorage<string[]>("labs-completed", []);
-  const [simulateLatency, setSimulateLatency] = useLocalStorage("labs-latency", false);
-  const [latest] = api.post.getLatest.useSuspenseQuery();
   const utils = api.useUtils();
+  const [mutationLatency, setMutationLatency] = useLocalStorage(
+    "labs-mutation-latency",
+    false,
+  );
+
+  // Seed controls
+  const seed = api.post.seed.useMutation({
+    onSuccess: async () => {
+      await utils.post.invalidate();
+    },
+  });
+  const [seedCount, setSeedCount] = useState(5);
+
+  // Latest
+  const [latest] = api.post.getLatest.useSuspenseQuery();
+
+  // Create
+  const [name, setName] = useState("");
   const create = api.post.create.useMutation({
     onMutate: async (vars) => {
-      if (simulateLatency) await new Promise(r => setTimeout(r, 600));
+      if (mutationLatency) await new Promise((r) => setTimeout(r, 600));
       return vars;
     },
     onSuccess: async () => {
       await utils.post.invalidate();
     },
   });
-  const [name, setName] = useState("");
+
+  // List + delete
+  const [posts] = api.post.list.useSuspenseQuery();
+  const del = api.post.delete.useMutation({
+    onSuccess: async () => {
+      await utils.post.invalidate();
+    },
+  });
+
+  // Search
+  const [q, setQ] = useState("");
+  const dq = useDebouncedValue(q, 250);
+  const search = api.post.search.useQuery({ q: dq }, { staleTime: 800 });
+
+  // Infinite
+  const infinite = api.post.listCursor.useInfiniteQuery(
+    { limit: 5 },
+    {
+      getNextPageParam: (last) => last.nextCursor,
+      staleTime: 1_000,
+    },
+  );
+  const pages = infinite.data?.pages ?? [];
+  const infiniteItems = useMemo(() => pages.flatMap((p) => p.items), [pages]);
+
+  // Optimistic like toggle
+  const [failChance, setFailChance] = useState(0.3);
+  const likeToggle = api.post.toggleLike.useMutation({
+    onMutate: async ({ id }) => {
+      // optimistic flip across caches that include posts
+      await utils.post.list.cancel();
+      await utils.post.search.cancel();
+      await utils.post.listCursor.cancel();
+
+      const prevList = utils.post.list.getData();
+      const prevSearch = utils.post.search.getData({ q: dq });
+      const prevCursor = utils.post.listCursor.getInfiniteData({ limit: 5 });
+
+      utils.post.list.setData(undefined, (old) =>
+        (old ?? []).map((p) => (p.id === id ? { ...p, liked: !p.liked } : p)),
+      );
+      if (prevSearch) {
+        utils.post.search.setData({ q: dq }, (old) =>
+          (old ?? []).map((p) => (p.id === id ? { ...p, liked: !p.liked } : p)),
+        );
+      }
+      if (prevCursor) {
+        utils.post.listCursor.setInfiniteData({ limit: 5 }, (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((pg) => ({
+              ...pg,
+              items: pg.items.map((p) => (p.id === id ? { ...p, liked: !p.liked } : p)),
+            })),
+          };
+        });
+      }
+
+      return { prevList, prevSearch, prevCursor } as const;
+    },
+    onError: (_err, _vars, ctx) => {
+      // rollback
+      if (!ctx) return;
+      utils.post.list.setData(undefined, ctx.prevList);
+      if (ctx.prevSearch) utils.post.search.setData({ q: dq }, ctx.prevSearch);
+      if (ctx.prevCursor)
+        utils.post.listCursor.setInfiniteData({ limit: 5 }, ctx.prevCursor);
+    },
+    onSettled: async () => {
+      await utils.post.invalidate();
+    },
+  });
+
   const maxChars = 40;
   const remaining = maxChars - name.length;
 
-  useEffect(() => {
-    if (!completed.includes(active)) {
-      setCompleted([...completed, active]);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active]);
-
-  const progressPct = Math.round((completed.length / introSteps.length) * 100);
-
-  function copyCode(text: string) {
-    void navigator.clipboard.writeText(text);
-  }
-
   return (
-    <main className="mx-auto max-w-5xl px-6 py-20">
-      <h1 className="mb-10 text-4xl font-bold tracking-tight">Labs</h1>
-      <div className="grid gap-10 md:grid-cols-3">
-        <aside className="space-y-4 md:col-span-1">
-          <div className="space-y-2">
-            {introSteps.map((s) => {
-              const done = completed.includes(s.id);
-              return (
-                <button
-                  key={s.id}
-                  onClick={() => setActive(s.id)}
-                  className={`group w-full rounded-xl px-4 py-3 text-left text-sm font-medium transition ${
-                    active === s.id
-                      ? "glass border-white/30 text-white"
-                      : "bg-white/5 text-white/60 hover:bg-white/10"
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    {done ? (
-                      <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/80 text-[10px] font-bold text-white">✓</span>
-                    ) : (
-                      <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-white/30 text-[10px] text-white/40">{introSteps.indexOf(s)+1}</span>
-                    )}
-                    {s.title}
-                  </span>
-                </button>
-              );
-            })}
+    <main className="mx-auto max-w-6xl px-6 py-20">
+      <header className="mb-10 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+        <h1 className="text-4xl font-bold tracking-tight">Labs</h1>
+        <div className="flex items-center gap-2 text-sm">
+          <input
+            type="number"
+            min={1}
+            max={20}
+            value={seedCount}
+            onChange={(e) => setSeedCount(Number(e.target.value))}
+            className="w-20 rounded-md bg-white/10 px-2 py-1 text-white/80"
+          />
+          <button
+            onClick={() => seed.mutate({ count: seedCount })}
+            disabled={seed.isPending}
+            className="rounded-full bg-white/10 px-4 py-2 font-semibold text-white/80 hover:bg-white/20 disabled:opacity-50"
+          >
+            {seed.isPending ? "Seeding…" : "Seed posts"}
+          </button>
+        </div>
+      </header>
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+  <GlassCard title="Latest post" subtitle="Demonstrates a typed TRPC suspense query that retrieves the most recent post.">
+          <p className="text-white/70">Latest: {latest ? latest.name : "— none —"}</p>
+          <div className="mt-3">
+            <pre className="max-h-40 overflow-auto rounded bg-black/40 p-3 text-[11px] text-white/70">{`const [latest] = api.post.getLatest.useSuspenseQuery();`}</pre>
           </div>
-          <div className="glass rounded-2xl p-4 space-y-3">
-            <p className="text-xs uppercase tracking-wide text-white/40">Progress</p>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
-              <div className="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-400 transition-all" style={{ width: `${progressPct}%` }} />
-            </div>
-            <p className="text-right text-[10px] font-medium text-white/50">{progressPct}%</p>
+        </GlassCard>
+
+  <GlassCard title="Create post" subtitle="Create a post via a TRPC mutation; optionally simulate network latency for UX testing.">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!name.trim()) return;
+              create.mutate({ name: name.trim() });
+              setName("");
+            }}
+            className="flex flex-col gap-2 sm:flex-row"
+          >
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Post title"
+              maxLength={maxChars}
+              className="flex-1 rounded-full bg-white/10 px-4 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/30"
+            />
+            <button
+              type="submit"
+              disabled={create.isPending}
+              className="rounded-full bg-white/10 px-6 py-2 text-sm font-semibold tracking-wide transition hover:bg-white/20 disabled:opacity-40"
+            >
+              {create.isPending ? "Creating…" : "Create"}
+            </button>
+          </form>
+          <div className="mt-2 flex items-center justify-between text-[10px] text-white/40">
+            <span>{remaining} chars left</span>
+            {create.isPending && (
+              <span className="animate-pulse text-white/60">Waiting for server…</span>
+            )}
+          </div>
+          {create.error && (
+            <p className="mt-2 text-xs text-rose-300">
+              {create.error.data?.zodError?.fieldErrors?.name?.[0] ?? create.error.message}
+            </p>
+          )}
+          <label className="mt-3 flex items-center gap-2 text-[11px] text-white/60">
+            <input
+              type="checkbox"
+              checked={mutationLatency}
+              onChange={(e) => setMutationLatency(e.target.checked)}
+              className="h-3 w-3 rounded border-white/30 bg-black/40"
+            />
+            Simulate latency (this card only)
+          </label>
+          <div className="mt-3">
+            <pre className="max-h-40 overflow-auto rounded bg-black/40 p-3 text-[11px] text-white/70">{`const create = api.post.create.useMutation({
+  onMutate: async (vars) => {
+    if (latency) await delay(600);
+    return vars;
+  },
+  onSuccess: () => utils.post.invalidate(),
+});`}</pre>
+          </div>
+        </GlassCard>
+
+  <GlassCard title="List posts" subtitle="Fetch all posts and delete items; use cache invalidation to refetch.">
+          <ul className="space-y-2">
+            {posts.length === 0 && <li className="text-white/50 text-sm">No posts yet.</li>}
+            {posts.map((p) => (
+              <li key={p.id} className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-sm">
+                <span className="text-white/80">#{p.id} — {p.name}</span>
+                <div className="flex items-center gap-2">
+                  <span className={"text-xs " + (p.liked ? "text-pink-300" : "text-white/40")}>{p.liked ? "♥" : "♡"}</span>
+                  <button
+                    type="button"
+                    onClick={() => del.mutate({ id: p.id })}
+                    className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-white/70 transition hover:bg-white/20"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-3 flex items-center justify-start">
+            <button
+              type="button"
+              onClick={() => void utils.post.list.invalidate()}
+              className="rounded-full bg-white/10 px-4 py-1.5 text-xs font-semibold tracking-wide text-white/80 transition hover:bg-white/20"
+            >
+              Refetch
+            </button>
+          </div>
+        </GlassCard>
+
+  <GlassCard title="Search posts" subtitle="Debounced client input paired with a TRPC query that filters posts by title.">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search by title…"
+            className="w-full rounded-md bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/30"
+          />
+          <div className="mt-3 min-h-[2.5rem] text-sm">
+            {search.isLoading ? (
+              <p className="text-white/50">Searching…</p>
+            ) : (
+              <ul className="space-y-1">
+                {(search.data ?? []).map((p) => (
+                  <li key={p.id} className="text-white/80">#{p.id} — {p.name}</li>
+                ))}
+                {search.data && search.data.length === 0 && (
+                  <li className="text-white/50">No results.</li>
+                )}
+              </ul>
+            )}
+          </div>
+          {/* copy button removed */}
+        </GlassCard>
+
+  <GlassCard title="Infinite posts" subtitle="Cursor-based pagination using useInfiniteQuery with a nextCursor from the API.">
+          <ul className="space-y-2">
+            {infiniteItems.map((p) => (
+              <li key={p.id} className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-sm">
+                <span className="text-white/80">#{p.id} — {p.name}</span>
+                <span className={"text-xs " + (p.liked ? "text-pink-300" : "text-white/40")}>{p.liked ? "♥" : "♡"}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-3 flex items-center justify-start">
+            <button
+              type="button"
+              onClick={() => void infinite.fetchNextPage()}
+              disabled={!infinite.hasNextPage || infinite.isFetchingNextPage}
+              className="rounded-full bg-white/10 px-4 py-1.5 text-xs font-semibold tracking-wide text-white/80 transition hover:bg-white/20 disabled:opacity-50"
+            >
+              {infinite.isFetchingNextPage ? "Loading…" : infinite.hasNextPage ? "Load more" : "No more"}
+            </button>
+          </div>
+        </GlassCard>
+
+  <GlassCard title="Optimistic like toggle" subtitle="Optimistic updates across multiple caches with rollback on server error; failure chance is adjustable.">
+          <ul className="space-y-2">
+            {posts.slice(0, 6).map((p) => (
+              <li key={p.id} className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-sm">
+                <span className="text-white/80">#{p.id} — {p.name}</span>
+                <button
+                  type="button"
+                  onClick={() => likeToggle.mutate({ id: p.id, failChance })}
+                  disabled={likeToggle.isPending}
+                  className={"rounded-full px-3 py-1 text-[11px] font-semibold transition " + (p.liked ? "bg-pink-500/30 text-white hover:bg-pink-500/40" : "bg-white/10 text-white/70 hover:bg-white/20")}
+                >
+                  {p.liked ? "♥ Liked" : "♡ Like"}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-3 flex items-center gap-3">
             <label className="flex items-center gap-2 text-[11px] text-white/60">
+              Failure chance
               <input
-                type="checkbox"
-                checked={simulateLatency}
-                onChange={(e) => setSimulateLatency(e.target.checked)}
-                className="h-3 w-3 rounded border-white/30 bg-black/40"
+                type="range"
+                min={0}
+                max={1}
+                step={0.05}
+                value={failChance}
+                onChange={(e) => setFailChance(Number(e.target.value))}
+                className="w-40"
               />
-              Simulate latency
+              <span className="tabular-nums text-white/70">{Math.round(failChance * 100)}%</span>
             </label>
           </div>
-        </aside>
-        <section className="md:col-span-2 space-y-6">
-          {introSteps.map(
-            (s) =>
-              s.id === active && (
-                <div key={s.id} className="space-y-6">
-                  <div className="glass rounded-2xl p-6">
-                    <h2 className="mb-2 text-xl font-semibold text-white/90">
-                      {s.title}
-                    </h2>
-                    <p className="text-sm leading-relaxed text-white/70">{s.body}</p>
-                  </div>
-                  <div className="glass rounded-2xl p-6 space-y-4">
-                    <p className="text-xs uppercase tracking-wide text-white/40">
-                      Live Playground
-                    </p>
-                    <p className="text-sm text-white/70">
-                      Latest post: {latest ? latest.name : "— none —"}
-                    </p>
-                    <div className="relative">
-                      <pre className="max-h-48 overflow-auto rounded-lg bg-black/40 p-3 text-[11px] leading-relaxed text-white/70">
-{codeSamples[s.id]}
-                      </pre>
-                      <button
-                        onClick={() => copyCode(codeSamples[s.id] ?? "")}
-                        className="absolute right-2 top-2 rounded-md border border-white/20 bg-white/10 px-2 py-1 text-[10px] font-medium text-white/60 hover:text-white"
-                        aria-label="Copy code"
-                      >Copy</button>
-                    </div>
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        if (!name.trim()) return;
-                        create.mutate({ name: name.trim() });
-                        setName("");
-                      }}
-                      className="flex flex-col gap-2 sm:flex-row"
-                    >
-                      <input
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Post title"
-                        maxLength={maxChars}
-                        className="flex-1 rounded-full bg-white/10 px-4 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/30"
-                      />
-                      <button
-                        type="submit"
-                        disabled={create.isPending}
-                        className="rounded-full bg-white/10 px-6 py-2 text-sm font-semibold tracking-wide transition hover:bg-white/20 disabled:opacity-40"
-                      >
-                        {create.isPending ? "Creating…" : "Create"}
-                      </button>
-                    </form>
-                    <div className="flex items-center justify-between text-[10px] text-white/40">
-                      <span>{remaining} chars left</span>
-                      {create.isPending && <span className="animate-pulse text-white/60">Waiting for server…</span>}
-                    </div>
-                    {create.error && (
-                      <p className="text-xs text-rose-300">
-                        {create.error.data?.zodError?.fieldErrors?.name?.[0] ??
-                          create.error.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ),
+          {likeToggle.isError && (
+            <p className="mt-2 text-xs text-rose-300">{likeToggle.error?.message ?? "Failed toggling like"}</p>
           )}
-        </section>
+          {/* copy button removed */}
+        </GlassCard>
       </div>
     </main>
   );
