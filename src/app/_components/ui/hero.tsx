@@ -11,10 +11,10 @@ export function Hero() {
         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />Dual Student • Online Media @ Hansgrohe
       </p>
       <h1 className="max-w-4xl bg-gradient-to-br from-white via-white to-white/60 bg-clip-text text-5xl font-extrabold leading-tight text-transparent sm:text-6xl md:text-7xl">
-        Pixels, Pipes & Production Water Pressure.
+        Life is Waterfull. Your web should be, too.
       </h1>
       <p className="max-w-2xl text-balance text-lg text-white/60 md:text-xl">
-        Hi, I&apos;m a dual online media student turning coffee into accessible, animated web things. This site is my laboratory: motion experiments, SVG wizardry, type‑safe APIs, and a few jokes to keep the build pipeline hydrated.
+        Hi, I&apos;m Paul, a dual online media student turning time in front of a computer into accessible, animated web things. This site is my laboratory: motion experiments, SVG wizardry, type‑safe APIs, and a few jokes to keep the build pipeline hydrated.
       </p>
       <div className="flex flex-wrap items-center justify-center gap-4">
         <a
@@ -35,11 +35,11 @@ export function Hero() {
         <GlassCard title="Hands‑On" subtitle="Real practice" className="h-full">
           <p>Everything here I built from scratch: UI primitives, interactive SVG, optimistic data flows, and progressive enhancements.</p>
         </GlassCard>
-        <GlassCard title="Tech I Use" subtitle="Daily stack" className="h-full">
+        <GlassCard title="Tech I Use" subtitle="Site stack" className="h-full">
           <p>TypeScript, React 19, Next.js 15, Tailwind, tRPC, a sprinkle of CSS art, and a lot of design tokens.</p>
         </GlassCard>
         <GlassCard title="Philosophy" subtitle="Human first" className="h-full">
-          <p>Delight + clarity. Ship experimental ideas, then refine until even linters crack a smile.</p>
+          <p>Delight + clarity. Ship experimental ideas, then refine until even linters crack a smile. (sorry the AI is making up these cringe texts)</p>
         </GlassCard>
       </div>
     </section>

@@ -14,7 +14,16 @@ export function SectionHeader({ eyebrow, title, subtitle, align = "left", classN
         <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-fuchsia-300/70">{eyebrow}</p>
       )}
       <h2 className="text-2xl font-bold tracking-tight md:text-3xl">{title}</h2>
-      {subtitle && <p className="max-w-prose text-sm text-white/60 md:text-base">{subtitle}</p>}
+      {subtitle && (
+        <p
+          className={
+            "max-w-prose text-sm text-white/60 md:text-base" +
+            (align === "center" ? " mx-auto text-balance" : "")
+          }
+        >
+          {subtitle}
+        </p>
+      )}
     </div>
   );
 }

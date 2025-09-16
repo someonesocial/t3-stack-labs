@@ -1,37 +1,78 @@
+import { SectionHeader } from "../_components/ui/section-header";
+import { GlassCard } from "../_components/ui/glass-card";
+
 export const metadata = { title: "About — Paul Klemm" };
 
 export default function AboutPage() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-20 space-y-12">
-      <section className="space-y-4">
-        <h1 className="text-4xl font-bold tracking-tight">About Me</h1>
-        <p className="text-white/70 leading-relaxed text-balance">
-          I&apos;m a web engineer focused on building resilient, accessible, and performant experiences.
-          This site is both a portfolio and a living sandbox—each section demonstrates patterns in the
-          modern TypeScript full‑stack ecosystem. Rather than static case studies, I expose
-          real interactive examples you can inspect and learn from.
+      {/* Heading + subtitle only (requested content) */}
+      <SectionHeader
+        align="center"
+        eyebrow="Hello, I&apos;m Paul Klemm! 👋"
+        title="Welcome to my Profile!"
+        subtitle="I’m an online media student from Germany, passionate about technology and creating innovative digital solutions."
+      />
+
+      {/* About Me */}
+      <GlassCard title="About Me 👨‍💻" subtitle="Snapshot">
+        <ul className="list-disc space-y-1 pl-5 text-white/80">
+          <li>🎓 Online media student from Germany</li>
+          <li>📱 Software developer</li>
+          <li>🎨 Web designer with a focus on minimal design</li>
+          <li>🚀 Passionate about pushing the boundaries of what&apos;s possible</li>
+        </ul>
+      </GlassCard>
+
+      {/* Interests */}
+      <GlassCard title="My Interests 🌟" subtitle="What excites me">
+        <ul className="list-disc space-y-1 pl-5 text-white/80">
+          <li>🤖 AI Technology</li>
+          <li>🎨 Minimal Design</li>
+          <li>⚙️ Technical Finesse</li>
+          <li>❤️ Open Source Software</li>
+          <li>🕸️ Web Development</li>
+          <li>🔗 Decentralized Web</li>
+          <li>🔬 Cutting‑Edge Technologies</li>
+        </ul>
+      </GlassCard>
+
+      {/* Projects */}
+      <GlassCard title="Projects 🛠️" subtitle="Things I build">
+        <ul className="list-disc space-y-2 pl-5 text-white/80">
+          <li>
+            🌐 My personal website:&nbsp;
+            <a href="https://paulklemm.de" className="underline underline-offset-2 hover:text-white" target="_blank" rel="noreferrer noopener">
+              paulklemm.de
+            </a>
+            &nbsp;— a physics simulation coded from scratch in TypeScript!
+          </li>
+          <li>
+            📱 Android development projects:
+            <ul className="mt-1 list-disc space-y-1 pl-5">
+              <li>
+                <a href="https://xnorroid.com" className="underline underline-offset-2 hover:text-white" target="_blank" rel="noreferrer noopener">
+                  xnorroid.com
+                </a>
+              </li>
+              <li>
+                <a href="https://github.com/xnorroid" className="underline underline-offset-2 hover:text-white" target="_blank" rel="noreferrer noopener">
+                  github.com/xnorroid
+                </a>
+              </li>
+            </ul>
+          </li>
+          <li>📂 Feel free to explore my repositories for more exciting projects!</li>
+        </ul>
+      </GlassCard>
+
+      {/* Contact */}
+      <GlassCard title="Get in Touch 📫" subtitle="Feel free to reach out!">
+        <p className="text-white/80">
+          ✉️ Email:&nbsp;
+          <a href="mailto:info@paulklemm.de" className="underline underline-offset-2 hover:text-white">info@paulklemm.de</a>
         </p>
-      </section>
-      <section className="grid gap-6 sm:grid-cols-2">
-        <div className="glass rounded-2xl p-5">
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-white/60">Focus Areas</h2>
-          <ul className="space-y-1 text-sm text-white/70">
-            <li>Type‑safe APIs (tRPC · Zod)</li>
-            <li>Design Systems & Theming</li>
-            <li>Performance & DX Tooling</li>
-            <li>Interaction Design & Motion</li>
-          </ul>
-        </div>
-        <div className="glass rounded-2xl p-5">
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-white/60">Tech Comfort</h2>
-          <ul className="space-y-1 text-sm text-white/70">
-            <li>TypeScript · React 19 · Next.js 15</li>
-            <li>Prisma · Planetscale / SQLite</li>
-            <li>Edge + Node runtimes</li>
-            <li>CSS Architecture · Tailwind</li>
-          </ul>
-        </div>
-      </section>
+      </GlassCard>
     </main>
   );
 }

@@ -1,14 +1,20 @@
 "use client";
 import { useMemo, useState } from "react";
+import Link from "next/link";
 
-interface ProjectMeta { title: string; summary: string; tech: string[]; status: string }
+interface ProjectMeta {
+  title: string;
+  summary: string;
+  tech: string[];
+  status: string;
+  href?: string; // optional link
+  external?: boolean; // open in new tab if true
+}
 interface Props { initial: ProjectMeta[] }
-
-const statusFilters = ["All", "In Progress", "Prototype"]; // extend easily
 
 export default function ProjectsInteractive({ initial }: Props) {
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("All");
+  const [status, setStatus] = useState<string | null>(null);
   const [tech, setTech] = useState<string | null>(null);
 
   const allTech = useMemo(
@@ -16,8 +22,13 @@ export default function ProjectsInteractive({ initial }: Props) {
     [initial],
   );
 
+  const allStatuses = useMemo(
+    () => Array.from(new Set(initial.map(p => p.status))).sort(),
+    [initial],
+  );
+
   const filtered = initial.filter(p => {
-    if (status !== "All" && p.status !== status) return false;
+    if (status && p.status !== status) return false;
     if (tech && !p.tech.includes(tech)) return false;
     if (query) {
       const q = query.toLowerCase();
@@ -49,10 +60,16 @@ export default function ProjectsInteractive({ initial }: Props) {
         <div className="space-y-2 md:col-span-1">
           <label className="text-[11px] uppercase tracking-wide text-white/40">Status</label>
           <div className="flex flex-wrap gap-2">
-            {statusFilters.map(s => (
+            <button
+              onClick={() => setStatus(null)}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                status === null ? "bg-fuchsia-500/70 text-white" : "bg-white/10 text-white/60 hover:text-white"
+              }`}
+            >All</button>
+            {allStatuses.map(s => (
               <button
                 key={s}
-                onClick={() => setStatus(s)}
+                onClick={() => setStatus(s === status ? null : s)}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition ${
                   status === s ? "bg-fuchsia-500/70 text-white" : "bg-white/10 text-white/60 hover:text-white"
                 }`}
@@ -82,29 +99,43 @@ export default function ProjectsInteractive({ initial }: Props) {
         </div>
         <div className="md:col-span-3 flex items-center justify-between text-[11px] text-white/40 pt-2">
           <p>{filtered.length} result{filtered.length === 1 ? "" : "s"}</p>
-          {(query || status !== "All" || tech) && (
+      {(query || status !== null || tech) && (
             <button
-              onClick={() => { setQuery(""); setStatus("All"); setTech(null); }}
+        onClick={() => { setQuery(""); setStatus(null); setTech(null); }}
               className="text-white/50 underline-offset-2 hover:text-white hover:underline"
             >Reset</button>
           )}
         </div>
       </div>
       <div className="grid gap-8 md:grid-cols-2">
-        {filtered.map(p => (
-          <article key={p.title} className="glass rounded-2xl p-6 flex flex-col">
-            <header className="mb-3 space-y-1">
-              <h2 className="text-xl font-semibold text-white/90">{p.title}</h2>
-              <p className="text-xs uppercase tracking-wide text-white/40">{p.status}</p>
-            </header>
-            <p className="mb-4 text-sm text-white/70 leading-relaxed">{p.summary}</p>
-            <ul className="mt-auto flex flex-wrap gap-2 text-[11px] font-medium text-white/60">
-              {p.tech.map(t => (
-                <li key={t} className="rounded-full border border-white/15 px-2 py-1">{t}</li>
-              ))}
-            </ul>
-          </article>
-        ))}
+        {filtered.map(p => {
+          const content = (
+            <article className="glass rounded-2xl p-6 flex flex-col transition hover:translate-y-[-2px] hover:shadow-lg/10">
+              <header className="mb-3 space-y-1">
+                <h2 className="text-xl font-semibold text-white/90">{p.title}</h2>
+                <p className="text-xs uppercase tracking-wide text-white/40">{p.status}</p>
+              </header>
+              <p className="mb-4 text-sm text-white/70 leading-relaxed">{p.summary}</p>
+              <ul className="mt-auto flex flex-wrap gap-2 text-[11px] font-medium text-white/60">
+                {p.tech.map(t => (
+                  <li key={t} className="rounded-full border border-white/15 px-2 py-1">{t}</li>
+                ))}
+              </ul>
+            </article>
+          );
+          if (p.href) {
+            return p.external ? (
+              <a key={p.title} href={p.href} target="_blank" rel="noreferrer noopener" className="block">
+                {content}
+              </a>
+            ) : (
+              <Link key={p.title} href={p.href} className="block">
+                {content}
+              </Link>
+            );
+          }
+          return <div key={p.title}>{content}</div>;
+        })}
         {filtered.length === 0 && (
           <div className="col-span-full rounded-xl border border-dashed border-white/20 p-10 text-center text-sm text-white/50">
             No projects match your filters yet.

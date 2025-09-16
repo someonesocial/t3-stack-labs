@@ -39,7 +39,7 @@ export function FeatureGrid() {
     <section className="mx-auto max-w-6xl px-6 py-24">
       <div className="mb-10 flex items-end justify-between gap-4">
         <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-          What I focus on
+          What I focused on in this project
         </h2>
         <a
           href="/projects"

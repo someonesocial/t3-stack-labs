@@ -37,7 +37,7 @@ export default function RootLayout({
             <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3 text-sm">
               <Link href="/" className="font-semibold tracking-wide">Paul Klemm</Link>
               <ul className="flex items-center gap-6">
-                <li><a href="/about" className="text-white/70 hover:text-white">About</a></li>
+                <li><a href="/about" className="text-white/70 hover:text-white">About Me</a></li>
                 <li><a href="/projects" className="text-white/70 hover:text-white">Projects</a></li>
                 <li><a href="/labs" className="text-white/70 hover:text-white">Labs</a></li>
                 <li><a href="/learn" className="text-white/70 hover:text-white">Learn</a></li>
