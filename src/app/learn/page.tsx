@@ -174,7 +174,10 @@ export default async function LearnPage({ searchParams }: { searchParams?: Promi
     <HydrateClient>
       <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 py-16">
         <header className="space-y-4">
-          <h1 className="text-4xl font-bold tracking-tight">Learning Journey</h1>
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="text-4xl font-bold tracking-tight">Learning Journey</h1>
+            <Link href="/" className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white/80 hover:bg-white/20">← Back to home</Link>
+          </div>
           <p className="text-lg text-white/70">{hello.greeting}! Learn by moving step-by-step through the stack.</p>
           <div className="glass rounded-xl p-4">
             <div className="mb-1 flex items-center justify-between text-xs text-white/60">
@@ -213,8 +216,7 @@ export default async function LearnPage({ searchParams }: { searchParams?: Promi
             feels clear and move on—progress is tracked for you.
           </p>
         </section>
-
-        <Link href="/" className="text-sm text-white/60 underline hover:text-white">← Back to home</Link>
+        
       </main>
     </HydrateClient>
   );

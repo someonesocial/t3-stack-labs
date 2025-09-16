@@ -44,7 +44,10 @@ export default function ProjectsInteractive({ initial }: Props) {
   return (
     <main className="mx-auto max-w-5xl px-6 py-20 space-y-10">
       <header className="space-y-4">
-        <h1 className="text-4xl font-bold tracking-tight">Projects</h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-4xl font-bold tracking-tight">Projects</h1>
+          <Link href="/" className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white/80 hover:bg-white/20">← Back to home</Link>
+        </div>
         <p className="text-sm text-white/60">Filter & explore selected work and experiments.</p>
       </header>
       <div className="glass rounded-2xl p-5 grid gap-4 md:grid-cols-3">

@@ -140,7 +140,10 @@ export function LabsInteractive() {
   return (
     <main className="mx-auto max-w-6xl px-6 py-20">
       <header className="mb-10 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-        <h1 className="text-4xl font-bold tracking-tight">Labs</h1>
+        <div className="flex w-full items-center justify-between gap-3">
+          <h1 className="text-4xl font-bold tracking-tight">Labs</h1>
+          <a href="/" className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white/80 hover:bg-white/20">← Back to home</a>
+        </div>
         <div className="flex items-center gap-2 text-sm">
           <input
             type="number"

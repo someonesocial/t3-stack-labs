@@ -1,11 +1,15 @@
 import { SectionHeader } from "../_components/ui/section-header";
 import { GlassCard } from "../_components/ui/glass-card";
+import Link from "next/link";
 
 export const metadata = { title: "About — Paul Klemm" };
 
 export default function AboutPage() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-20 space-y-12">
+      <div className="flex items-center justify-end">
+        <Link href="/" className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white/80 hover:bg-white/20">← Back to home</Link>
+      </div>
       {/* Heading + subtitle only (requested content) */}
       <SectionHeader
         align="center"
