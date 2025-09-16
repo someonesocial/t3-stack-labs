@@ -9,6 +9,7 @@ interface GlassCardProps {
   className?: string;
   footer?: ReactNode;
   as?: React.ElementType;
+  id?: string;
 }
 
 export function GlassCard({
@@ -18,10 +19,12 @@ export function GlassCard({
   className,
   footer,
   as = "div",
+  id,
 }: GlassCardProps) {
   const Component = as ?? "div";
   return (
     <Component
+      id={id}
       className={cn(
         "glass glass-hover relative flex flex-col overflow-hidden rounded-2xl p-6",
   "before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_30%_20%,hsla(280,100%,60%,0.15),transparent_60%)]",
