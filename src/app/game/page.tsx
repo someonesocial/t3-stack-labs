@@ -1,5 +1,5 @@
-import GameClient from "./game-client";
+import ClientOnly from "./client-only";
 
 export default function GamePage() {
-  return <GameClient />;
+  return <ClientOnly />;
 }
