@@ -129,7 +129,7 @@ export function FlowDiagram() {
             </marker>
           </defs>
           {[
-            { x: 40, label: "UI Event", sub: "Button click / form submit" },
+            { x: 40, label: "UI Event", sub: "Button click" },
             { x: 200, label: "useMutation", sub: "@trpc/react-query" },
             { x: 380, label: "tRPC", sub: "/api/trpc" },
             { x: 540, label: "Zod", sub: "Input validation" },
