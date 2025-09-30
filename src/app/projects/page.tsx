@@ -39,6 +39,13 @@ const projects: ProjectMeta[] = [
     status: "Guide",
     href: "/learn",
   },
+  {
+    title: "Realtime Chat (DB)",
+    summary: "SQLite/Prisma + tRPC infinite query with optimistic UI and polling.",
+    tech: ["Prisma", "tRPC", "React Query"],
+    status: "New",
+    href: "/chat",
+  },
 
   // External GitHub projects
   {
