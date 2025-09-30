@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "~/trpc/react";
 import { useLocalStorage } from "./use-local-storage";
 import { GlassCard } from "../_components/ui/glass-card";
+import { BackButton } from "../_components/ui/back-button";
 
 function useDebouncedValue<T>(value: T, delay = 300) {
   const [debounced, setDebounced] = useState(value);
@@ -142,7 +143,7 @@ export function LabsInteractive() {
       <header className="mb-10 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div className="flex w-full items-center justify-between gap-3">
           <h1 className="text-4xl font-bold tracking-tight">Labs</h1>
-          <a href="/" className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white/80 hover:bg-white/20">← Back to home</a>
+          <BackButton />
         </div>
         <div className="flex items-center gap-2 text-sm">
           <input

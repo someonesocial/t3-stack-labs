@@ -1,5 +1,5 @@
 import { api, HydrateClient } from "~/trpc/server";
-import Link from "next/link";
+import { BackButton } from "../_components/ui/back-button";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { ModuleChecklist } from "./";
@@ -176,7 +176,7 @@ export default async function LearnPage({ searchParams }: { searchParams?: Promi
         <header className="space-y-4">
           <div className="flex items-center justify-between gap-3">
             <h1 className="text-4xl font-bold tracking-tight">Learning Journey</h1>
-            <Link href="/" className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white/80 hover:bg-white/20">← Back to home</Link>
+            <BackButton />
           </div>
           <p className="text-lg text-white/70">{hello.greeting}! Learn by moving step-by-step through the stack.</p>
           <div className="glass rounded-xl p-4">
