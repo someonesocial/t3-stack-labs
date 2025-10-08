@@ -2,9 +2,11 @@
 import * as React from "react";
 import { api } from "~/trpc/react";
 
-export default function ChatClient() {
+type Props = { defaultAuthor?: string };
+
+export default function ChatClient({ defaultAuthor = "anonymous" }: Props) {
   const utils = api.useUtils();
-  const [author, setAuthor] = React.useState("anonymous");
+  const [author, setAuthor] = React.useState(defaultAuthor);
   const [input, setInput] = React.useState("");
   const [userAtBottom, setUserAtBottom] = React.useState(true);
   const [newMessageSinceScroll, setNewMessageSinceScroll] = React.useState(false);
@@ -16,7 +18,7 @@ export default function ChatClient() {
     { limit: 25 },
     {
       getNextPageParam: (last) => last.nextCursor,
-      refetchInterval: 5000,
+      refetchInterval: () => (typeof document !== "undefined" && document.visibilityState === "visible" ? 5000 : false),
     },
   );
 
@@ -72,6 +74,14 @@ export default function ChatClient() {
     setInput("");
   }
 
+  // Persist author in a cookie for future visits (1 year)
+  React.useEffect(() => {
+    try {
+      const v = encodeURIComponent(author || "anonymous");
+      document.cookie = `chat-author=${v}; path=/; max-age=31536000; samesite=lax`;
+    } catch {}
+  }, [author]);
+
   // Track scroll position
   React.useEffect(() => {
     const el = listRef.current;
@@ -82,12 +92,13 @@ export default function ChatClient() {
       if (atBottom) setNewMessageSinceScroll(false);
       // Upward infinite scroll trigger
       if (el.scrollTop < 80 && hasNextPage && !isFetchingNextPage) {
+        const prevHeight = el.scrollHeight;
+        const prevTop = el.scrollTop;
         void fetchNextPage().then(() => {
-          // Preserve relative scroll position after prepending older messages
+          // Precise scroll preservation based on height diff
           requestAnimationFrame(() => {
-            if (!el) return;
-            // Scroll offset compensation: keep user roughly where they were
-            el.scrollTop = el.scrollTop + 200; // heuristic; alternative: measure height diff with snapshot
+            const newHeight = el.scrollHeight;
+            el.scrollTop = prevTop + (newHeight - prevHeight);
           });
         });
       }
@@ -120,6 +131,29 @@ export default function ChatClient() {
     lastMessageIdRef.current = newest.id;
   }, [messages, userAtBottom]);
 
+  // Simple URL auto-linking for message content
+  const linkify = React.useCallback((text: string) => {
+    const urlRegex = /((https?:\/\/)?[\w.-]+\.[A-Za-z]{2,}(\/[\w\-._~:/?#[\]@!$&'()*+,;=]*)?)/g;
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = urlRegex.exec(text)) !== null) {
+      const start = match.index;
+      const end = start + match[0].length;
+      if (start > lastIndex) parts.push(text.slice(lastIndex, start));
+      const raw = match[0];
+      const href = raw.startsWith("http") ? raw : `https://${raw}`;
+      parts.push(
+        <a key={`${start}-${end}`} href={href} target="_blank" rel="noreferrer noopener" className="underline underline-offset-2 hover:text-white">
+          {raw}
+        </a>
+      );
+      lastIndex = end;
+    }
+    if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+    return parts;
+  }, []);
+
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-white/10 bg-gradient-to-b from-white/5 to-white/0 p-4 backdrop-blur h-96 flex flex-col">
@@ -139,28 +173,49 @@ export default function ChatClient() {
           {!isPending && messages.length === 0 && (
             <div className="text-xs text-white/40">No messages yet. Be the first.</div>
           )}
-          {messages.map((m) => {
+          {messages.map((m, idx) => {
             const optimistic = m.id < 0;
+            const curDate = new Date(m.createdAt);
+            const prev = messages[idx - 1];
+            const prevDate = prev ? new Date(prev.createdAt) : null;
+            const dayChanged = !prevDate || prevDate.toDateString() !== curDate.toDateString();
+            const dateLabel = (() => {
+              const today = new Date();
+              const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+              if (curDate.toDateString() === today.toDateString()) return "Today";
+              if (curDate.toDateString() === yesterday.toDateString()) return "Yesterday";
+              return curDate.toLocaleDateString("de-DE");
+            })();
             return (
-              <div
-                key={m.id}
-                className={`rounded px-3 py-2 text-sm leading-snug ring-1 ring-white/10 bg-white/5 backdrop-blur transition ${
-                  optimistic ? "opacity-70 animate-pulse" : ""
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-white/90">{m.author}</span>
-                  <span className="text-[10px] text-white/40">
-                    {new Date(m.createdAt).toLocaleTimeString("de-DE", { hour12: false })}
-                  </span>
-                  {optimistic && (
-                    <span className="text-[10px] text-yellow-400">sending…</span>
-                  )}
+              <React.Fragment key={m.id}>
+                {dayChanged && (
+                  <div className="my-2 flex items-center gap-2 text-[10px] text-white/40">
+                    <div className="h-px flex-1 bg-white/10" />
+                    <span>{dateLabel}</span>
+                    <div className="h-px flex-1 bg-white/10" />
+                  </div>
+                )}
+                <div
+                  className={`rounded px-3 py-2 text-sm leading-snug ring-1 ring-white/10 bg-white/5 backdrop-blur transition ${
+                    optimistic ? "opacity-70 animate-pulse" : ""
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-white/90">{m.author}</span>
+                    <span className="text-[10px] text-white/40">
+                      {curDate.toLocaleTimeString("de-DE", { hour12: false })}
+                    </span>
+                    {optimistic ? (
+                      <span className="text-[10px] text-yellow-400">sending…</span>
+                    ) : (
+                      <span className="text-[10px] text-white/30">✓</span>
+                    )}
+                  </div>
+                  <div className="whitespace-pre-wrap break-words text-white/80">
+                    {linkify(m.content)}
+                  </div>
                 </div>
-                <div className="whitespace-pre-wrap break-words text-white/80">
-                  {m.content}
-                </div>
-              </div>
+              </React.Fragment>
             );
           })}
           <div ref={bottomRef} />
