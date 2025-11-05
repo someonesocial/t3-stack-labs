@@ -43,6 +43,7 @@ export default function RootLayout({
                 <li><a href="/learn" className="text-white/70 hover:text-white">Learn</a></li>
                 <li><a href="/svg" className="text-white/70 hover:text-white">SVG</a></li>
                 <li><a href="/game" className="text-white/70 hover:text-white">Game</a></li>
+                <li><a href="/chat" className="text-white/70 hover:text-white">Chat</a></li>
               </ul>
             </nav>
           </header>

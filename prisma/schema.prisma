@@ -1,0 +1,21 @@
+// Prisma schema for the project
+// Datasource + generator follow standard T3 (PlanetScale/Neon/Local) baseline.
+// Adjust provider/url via DATABASE_URL env.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  content   String
+  author    String   @default("anonymous")
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
