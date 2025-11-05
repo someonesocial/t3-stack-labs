@@ -44,7 +44,7 @@ export function StackDiagram() {
           {/* Data */}
           <rect x="640" y="220" width="280" height="120" rx="14" fill="#111827" stroke="url(#gradA)" strokeWidth="1.5" />
           <text x="654" y="250" className="fill-white" fontSize="14" fontWeight={700}>Data layer</text>
-          <text x="654" y="274" className="fill-white/70" fontSize="12">Prisma (planned) / in-memory (demo)</text>
+          <text x="654" y="274" className="fill-white/70" fontSize="12">Prisma / in-memory</text>
 
           {/* Arrows */}
           <g stroke="#94a3b8" strokeWidth="1.5" markerEnd="url(#arrow)">
@@ -100,7 +100,7 @@ export function StackDiagramInline() {
         </g>
         <rect x="640" y="220" width="280" height="120" rx="14" fill="#111827" stroke="url(#gradA)" strokeWidth="1.5" />
         <text x="654" y="250" className="fill-white" fontSize="14" fontWeight={700}>Data layer</text>
-        <text x="654" y="274" className="fill-white/70" fontSize="12">Prisma (planned) / in-memory (demo)</text>
+        <text x="654" y="274" className="fill-white/70" fontSize="12">Prisma / in-memory</text>
         <g stroke="#94a3b8" strokeWidth="1.5" markerEnd="url(#arrow)">
           <defs>
             <marker id="arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
