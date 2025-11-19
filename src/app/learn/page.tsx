@@ -112,7 +112,7 @@ const modules = [
         </ul>
         <p>
           Practical tip: co-locate small schemas next to procedures, and extract shared primitives (like <span className="font-mono">postTitle</span>)
-          to a common file when reused. Keep messages actionable (e.g., "Title must be between 3 and 80 characters").
+          to a common file when reused. Keep messages actionable (e.g., &quot;Title must be between 3 and 80 characters&quot;).
         </p>
       </div>
     ),
@@ -155,18 +155,23 @@ const modules = [
   },
 ];
 
-export default async function LearnPage({ searchParams }: { searchParams?: Promise<{ [key: string]: string | string[] | undefined }> }) {
+export default async function LearnPage({ searchParams }: { searchParams?: Promise<Record<string, string | string[] | undefined>> }) {
   void api.post.list.prefetch();
   const hello = await api.post.hello({ text: "Learner" });
-  const cookieStore = (await cookies()) as any;
+  const cookieStore = await cookies();
   let done: string[] = [];
-  try { done = JSON.parse(cookieStore.get("learn-modules")?.value ?? "[]"); } catch {}
+  try {
+    const parsed: unknown = JSON.parse(cookieStore.get("learn-modules")?.value ?? "[]");
+    if (Array.isArray(parsed) && parsed.every((x): x is string => typeof x === "string")) {
+      done = parsed;
+    }
+  } catch {}
   const progress = Math.round(((done?.length ?? 0) / modules.length) * 100);
   const sp = (await searchParams) ?? {};
   const openId = typeof sp.step === "string" ? sp.step : null;
   async function resetProgress() {
     "use server";
-    const c = (await cookies()) as any;
+    const c = await cookies();
     c.set("learn-modules", JSON.stringify([]), { path: "/", httpOnly: false, sameSite: "lax", maxAge: 60 * 60 * 24 * 365 });
     revalidatePath("/learn");
   }

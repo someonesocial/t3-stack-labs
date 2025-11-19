@@ -68,7 +68,7 @@ export function LabsInteractive() {
       staleTime: 1_000,
     },
   );
-  const pages = infinite.data?.pages ?? [];
+  const pages = useMemo(() => infinite.data?.pages ?? [], [infinite.data?.pages]);
   const infiniteItems = useMemo(() => pages.flatMap((p) => p.items), [pages]);
 
   // Optimistic like toggle

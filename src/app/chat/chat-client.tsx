@@ -30,7 +30,7 @@ export default function ChatClient({ defaultAuthor = "anonymous" }: Props) {
         const optimistic = {
           id: -Date.now(),
           content: vars.content,
-          author: vars.author || "anonymous",
+          author: vars.author ?? "anonymous",
           createdAt: new Date(),
         };
         if (!old) {
@@ -66,7 +66,9 @@ export default function ChatClient({ defaultAuthor = "anonymous" }: Props) {
     },
   });
 
-  const messages = data?.pages.flatMap((p) => p.items) ?? [];
+  const messages = React.useMemo(() => {
+    return data?.pages.flatMap((p) => p.items) ?? [];
+  }, [data]);
 
   function send() {
     if (!input.trim() || input.length > MAX_LEN) return;
@@ -77,7 +79,7 @@ export default function ChatClient({ defaultAuthor = "anonymous" }: Props) {
   // Persist author in a cookie for future visits (1 year)
   React.useEffect(() => {
     try {
-      const v = encodeURIComponent(author || "anonymous");
+      const v = encodeURIComponent(author ?? "anonymous");
       document.cookie = `chat-author=${v}; path=/; max-age=31536000; samesite=lax`;
     } catch {}
   }, [author]);

@@ -15,22 +15,33 @@ export interface ModuleItem {
 interface Props { modules: ModuleItem[]; openId?: string | null }
 
 export default async function ModuleChecklist({ modules, openId }: Props) {
-  const cookieStore = (await cookies()) as any;
+  const cookieStore = await cookies();
   const raw = cookieStore.get("learn-modules")?.value ?? "[]";
   let done: string[] = [];
-  try { done = JSON.parse(raw) as string[]; } catch {}
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.every((x): x is string => typeof x === "string")) {
+      done = parsed;
+    }
+  } catch {}
 
   const indexById = new Map(modules.map((m, i) => [m.id, i] as const));
   const open = openId && indexById.has(openId) ? openId : modules[0]?.id ?? null;
-  const currentIndex = open ? indexById.get(open) ?? 0 : 0;
+  // const currentIndex = open ? indexById.get(open) ?? 0 : 0; // not used
   const progress = Math.round(((done?.length ?? 0) / modules.length) * 100);
 
   async function toggleAction(formData: FormData) {
     "use server";
-    const id = String(formData.get("id") ?? "");
-    const c = (await cookies()) as any;
+    const v = formData.get("id");
+    const id = typeof v === "string" ? v : "";
+    const c = await cookies();
     let arr: string[] = [];
-    try { arr = JSON.parse(c.get("learn-modules")?.value ?? "[]"); } catch {}
+    try {
+      const parsed: unknown = JSON.parse(c.get("learn-modules")?.value ?? "[]");
+      if (Array.isArray(parsed) && parsed.every((x): x is string => typeof x === "string")) {
+        arr = parsed;
+      }
+    } catch {}
     if (arr.includes(id)) arr = arr.filter((x) => x !== id); else arr.push(id);
     c.set("learn-modules", JSON.stringify(arr), { path: "/", httpOnly: false, sameSite: "lax", maxAge: 60 * 60 * 24 * 365 });
     revalidatePath("/learn");
