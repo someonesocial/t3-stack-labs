@@ -1,17 +1,16 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
 
 // Prevent multiple instances of Prisma Client in dev (Next.js hot reload)
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+// If you see engineType "client" errors, ensure no env var forces Rust-free engine:
+// Remove PRISMA_CLIENT_ENGINE_TYPE or set it to "binary" in your environment.
 
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
-    adapter,
     log:
       process.env.NODE_ENV === "development"
         ? ["query", "error", "warn"]

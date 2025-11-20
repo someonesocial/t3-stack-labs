@@ -3,8 +3,7 @@
 // Adjust provider/url via DATABASE_URL env.
 
 generator client {
-  provider   = "prisma-client-js"
-  engineType = "client"
+  provider = "prisma-client-js"
 }
 
 datasource db {
