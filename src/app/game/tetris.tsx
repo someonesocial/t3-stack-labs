@@ -585,7 +585,7 @@ export default function Tetris() {
       tabIndex={0}
       role="application"
       aria-label="Tetris game. Arrow keys or WASD to move, Space for hard drop, Q for dino, P to pause."
-      style={{ "--cell": "min((100dvh - 11rem) / 22, (100vw - 2rem) / 10.5, 1.5rem)", touchAction: "none", overscrollBehavior: "none" } as React.CSSProperties}
+      style={{ "--cell": "min((100dvh - 14rem) / 22, (100vw - 2rem) / 10.5, 2rem)", touchAction: "none", overscrollBehavior: "none" } as React.CSSProperties}
       onClick={(e) => {
         const target = e.target as HTMLElement;
         if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
@@ -631,7 +631,7 @@ export default function Tetris() {
       {/* ── Board ── */}
       <div
         ref={boardRef}
-        className={clsx("glass relative mx-auto rounded-xl p-2 sm:p-3 lg:mx-0", dinoActive && "border-green-500/40")}
+        className={clsx("glass relative mx-auto rounded-xl p-2 sm:p-3 lg:mx-0 lg:flex lg:flex-col lg:justify-center lg:self-stretch", dinoActive && "border-green-500/40")}
         style={{
           touchAction: "none",
           ...(dinoActive ? { animation: "dinoShake 0.3s ease-in-out infinite" } : levelUpAnim ? { animation: "levelUpFlash 1.2s ease-out" } : undefined),
@@ -731,12 +731,12 @@ export default function Tetris() {
         )}
       </div>
 
-      {/* ── Mobile touch controls ── */}
+      {/* ── Mobile touch controls: ← ↻ → ↓ ⤓ 🦖 ↺ ── */}
       <div className="flex items-center justify-center gap-2 px-1 lg:hidden">
         <button onClick={() => moveDir(-1)} disabled={gameOver || dinoActive || !running} className={clsx(tBtn, "h-11 w-11")}>{"←"}</button>
         <button onClick={rotateCW} disabled={gameOver || dinoActive || !running} className={clsx(tBtn, "h-11 w-11")}>{"↻"}</button>
-        <button onClick={softDrop} disabled={gameOver || dinoActive || !running} className={clsx(tBtn, "h-11 w-11")}>{"↓"}</button>
         <button onClick={() => moveDir(1)} disabled={gameOver || dinoActive || !running} className={clsx(tBtn, "h-11 w-11")}>{"→"}</button>
+        <button onClick={softDrop} disabled={gameOver || dinoActive || !running} className={clsx(tBtn, "h-11 w-11")}>{"↓"}</button>
         <button onClick={hardDrop} disabled={gameOver || !running || dinoActive}
           className={clsx(tBtn, "h-11 w-14 border-cyan-400/30 bg-cyan-500/10 text-cyan-300 text-xs")}>
           {"⤓"}
