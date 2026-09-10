@@ -585,7 +585,7 @@ export default function Tetris() {
       tabIndex={0}
       role="application"
       aria-label="Tetris game. Arrow keys or WASD to move, Space for hard drop, Q for dino, P to pause."
-      style={{ "--cell": "min((100dvh - 11rem) / 22, (100vw - 2rem) / 10.5, 1.5rem)" } as React.CSSProperties}
+      style={{ "--cell": "min((100dvh - 11rem) / 22, (100vw - 2rem) / 10.5, 1.5rem)", touchAction: "none", overscrollBehavior: "none" } as React.CSSProperties}
       onClick={(e) => {
         const target = e.target as HTMLElement;
         if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
