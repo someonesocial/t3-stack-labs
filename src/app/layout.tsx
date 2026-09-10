@@ -33,7 +33,7 @@ export default function RootLayout({
   <body className="min-h-screen font-sans text-white antialiased relative flex flex-col">
         <TRPCReactProvider>
       <AnimatedBackground />
-          <header className="border-b border-white/10 bg-black/40 backdrop-blurl">
+          <header className="sticky top-0 z-50 border-b border-white/10 bg-black/40 backdrop-blur">
             <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3 text-sm gap-6 whitespace-nowrap overflow-x-auto">
               <Link href="/" className="font-semibold tracking-wide">Paul Klemm</Link>
               <ul className="flex items-center gap-6">

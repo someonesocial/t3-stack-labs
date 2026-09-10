@@ -6,5 +6,5 @@ export const metadata: Metadata = {
 };
 
 export default function GameLayout({ children }: { children: React.ReactNode }) {
-  return <div className="flex h-[calc(100dvh-3rem)] flex-col overflow-hidden">{children}</div>;
+  return <div className="flex h-[calc(100dvh-2.875rem)] flex-col overflow-hidden">{children}</div>;
 }
