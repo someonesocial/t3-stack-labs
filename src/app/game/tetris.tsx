@@ -158,8 +158,9 @@ export default function Tetris() {
   });
   const [score, setScore] = useState(0);
   const [lines, setLines] = useState(0);
-  const [running, setRunning] = useState(true);
+  const [running, setRunning] = useState(false);
   const [gameOver, setGameOver] = useState(false);
+  const [gameStarted, setGameStarted] = useState(false);
 
   const [dinosUsed, setDinosUsed] = useState(0);
   const [dinoActive, setDinoActive] = useState(false);
@@ -530,6 +531,45 @@ export default function Tetris() {
 
   const tBtn = "flex items-center justify-center rounded-xl border border-white/20 bg-white/5 text-base font-bold text-white/80 active:bg-white/15 active:scale-95 transition-all select-none touch-manipulation disabled:opacity-30";
 
+  const startGame = () => {
+    if (!playerName.trim() || playerName === "anonymous") return;
+    setGameStarted(true);
+    setRunning(true);
+    setTimeout(() => containerRef.current?.focus(), 50);
+  };
+
+  if (!gameStarted) {
+    return (
+      <div className="flex items-center justify-center py-12 sm:py-24">
+        <div className="glass mx-auto w-full max-w-sm rounded-2xl p-6 text-center sm:p-8">
+          <div className="mb-4 text-5xl">{"\u{1F3AE}"}</div>
+          <h2 className="mb-1 text-2xl font-black text-white sm:text-3xl">Tetris</h2>
+          <p className="mb-6 text-sm text-white/50">Gib deinen Namen ein um zu spielen</p>
+          <input
+            type="text"
+            value={playerName === "anonymous" ? "" : playerName}
+            onChange={(e) => setPlayerName(e.target.value || "anonymous")}
+            onKeyDown={(e) => { if (e.key === "Enter") startGame(); }}
+            maxLength={40}
+            autoFocus
+            className="mb-4 w-full rounded-lg border border-white/20 bg-white/5 px-4 py-2.5 text-center text-lg text-white outline-none focus:border-purple-400/50 focus:ring-1 focus:ring-purple-400/30"
+            placeholder="Dein Name..."
+          />
+          <button
+            onClick={startGame}
+            disabled={!playerName.trim() || playerName === "anonymous"}
+            className="w-full rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 px-6 py-2.5 text-sm font-bold text-white transition-all hover:from-purple-400 hover:to-purple-500 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            Spiel starten
+          </button>
+          <p className="mt-4 text-[10px] leading-relaxed text-white/30">
+            WASD / Pfeiltasten bewegen &middot; Space Hard Drop &middot; Q Dino &middot; P Pause
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={containerRef}
@@ -537,7 +577,11 @@ export default function Tetris() {
       tabIndex={0}
       role="application"
       aria-label="Tetris game. Arrow keys or WASD to move, Space for hard drop, Q for dino, P to pause."
-      onClick={() => containerRef.current?.focus()}
+      onClick={(e) => {
+        const target = e.target as HTMLElement;
+        if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
+        containerRef.current?.focus();
+      }}
     >
       {/* ── Mobile top bar: score + level ── */}
       <div className="flex items-center justify-between gap-2 lg:hidden">
@@ -699,8 +743,6 @@ export default function Tetris() {
           <label className="mb-1 block text-xs font-medium text-white/50">Spielername</label>
           <input type="text" value={playerName}
             onChange={(e) => setPlayerName(e.target.value || "anonymous")}
-            onBlur={() => containerRef.current?.focus()}
-            onKeyDown={(e) => { if (e.key === "Enter") containerRef.current?.focus(); }}
             maxLength={40}
             className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white outline-none focus:border-white/30" placeholder="anonymous" />
         </div>
@@ -831,7 +873,6 @@ export default function Tetris() {
           <div className="flex items-center gap-3">
             <input type="text" value={playerName}
               onChange={(e) => setPlayerName(e.target.value || "anonymous")}
-              onBlur={() => containerRef.current?.focus()}
               maxLength={40}
               className="flex-1 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-white outline-none focus:border-white/30" placeholder="Spielername" />
             <div className="flex gap-3 text-[10px] text-white/50">
