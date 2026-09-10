@@ -487,12 +487,18 @@ export default function Tetris() {
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
     const t = e.touches[0];
     if (!t) return;
     touchStartRef.current = { x: t.clientX, y: t.clientY, time: Date.now() };
   };
 
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault();
+  };
+
   const handleTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault();
     const start = touchStartRef.current;
     const t = e.changedTouches[0];
     if (!start || !t || !running || gameOver || dinoActive || justLocked.current) return;
@@ -559,8 +565,12 @@ export default function Tetris() {
       <div
         ref={boardRef}
         className={clsx("glass relative mx-auto rounded-xl p-2 sm:p-4 lg:mx-0", dinoActive && "border-green-500/40")}
-        style={dinoActive ? { animation: "dinoShake 0.3s ease-in-out infinite" } : levelUpAnim ? { animation: "levelUpFlash 1.2s ease-out" } : undefined}
+        style={{
+          touchAction: "none",
+          ...(dinoActive ? { animation: "dinoShake 0.3s ease-in-out infinite" } : levelUpAnim ? { animation: "levelUpFlash 1.2s ease-out" } : undefined),
+        }}
         onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
         <div className="grid grid-cols-10 gap-[2px] sm:gap-[3px]">
