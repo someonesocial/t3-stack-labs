@@ -537,7 +537,7 @@ export default function Tetris() {
     }
   };
 
-  const tBtn = "flex items-center justify-center rounded-xl border border-white/20 bg-white/5 text-base font-bold text-white/80 active:bg-white/15 active:scale-95 transition-all select-none touch-manipulation disabled:opacity-30";
+  const tBtn = "flex items-center justify-center rounded-lg border border-white/20 bg-white/5 text-base font-bold text-white/80 active:bg-white/15 active:scale-95 transition-all select-none touch-manipulation disabled:opacity-30";
 
   const startGame = () => {
     if (!playerName.trim() || playerName === "anonymous") return;
@@ -581,10 +581,11 @@ export default function Tetris() {
   return (
     <div
       ref={containerRef}
-      className="flex flex-col gap-3 outline-none lg:flex-row lg:gap-6"
+      className="flex h-full flex-col gap-1 outline-none lg:flex-row lg:gap-6"
       tabIndex={0}
       role="application"
       aria-label="Tetris game. Arrow keys or WASD to move, Space for hard drop, Q for dino, P to pause."
+      style={{ "--cell": "min((100dvh - 11rem) / 22, (100vw - 2rem) / 10.5, 1.5rem)" } as React.CSSProperties}
       onClick={(e) => {
         const target = e.target as HTMLElement;
         if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
@@ -630,7 +631,7 @@ export default function Tetris() {
       {/* ── Board ── */}
       <div
         ref={boardRef}
-        className={clsx("glass relative w-full rounded-xl p-2 sm:p-3 lg:w-auto lg:max-w-[280px]", dinoActive && "border-green-500/40")}
+        className={clsx("glass relative mx-auto rounded-xl p-2 sm:p-3 lg:mx-0", dinoActive && "border-green-500/40")}
         style={{
           touchAction: "none",
           ...(dinoActive ? { animation: "dinoShake 0.3s ease-in-out infinite" } : levelUpAnim ? { animation: "levelUpFlash 1.2s ease-out" } : undefined),
@@ -639,36 +640,36 @@ export default function Tetris() {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="grid grid-cols-10 gap-[2px] sm:gap-[3px]">
+        <div className="mx-auto grid grid-cols-10 gap-[1px]" style={{ width: "calc(var(--cell) * 10 + 9px)" }}>
           {displayBoard.map((row, rIdx) => (
             <React.Fragment key={rIdx}>
               {row.map((cell, cIdx) => {
-                if (!cell) return <div key={cIdx} className="aspect-square rounded-sm border border-white/5 bg-black/40 sm:w-6" />;
+                const sz = { width: "var(--cell)", height: "var(--cell)" } as React.CSSProperties;
+                if (!cell) return <div key={cIdx} className="rounded-sm border border-white/5 bg-black/40" style={sz} />;
 
                 if (cell.startsWith("dino:")) {
                   const partType = parseInt(cell.split(":")[1]!, 10);
                   const st = DINO_CELL_STYLES[partType] ?? DINO_CELL_STYLES[1]!;
                   return (
-                    <div key={cIdx} className="aspect-square rounded-sm"
-                      style={{
-                        background: st.bg, borderWidth: "2px", borderStyle: "solid", borderColor: st.border,
-                        boxShadow: `${st.shadow}, inset 0 0 4px rgba(255,255,255,0.15)`,
-                        animation: "dinoCell 0.12s ease-in-out infinite alternate",
-                      }} />
+                    <div key={cIdx} className="rounded-sm" style={{
+                      ...sz, background: st.bg, borderWidth: "2px", borderStyle: "solid", borderColor: st.border,
+                      boxShadow: `${st.shadow}, inset 0 0 4px rgba(255,255,255,0.15)`,
+                      animation: "dinoCell 0.12s ease-in-out infinite alternate",
+                    }} />
                   );
                 }
-                if (cell === "exploded") return <div key={cIdx} className="aspect-square rounded-sm" style={{ animation: "cellExplode 0.5s ease-out forwards" }} />;
-                if (cell === "dino-trail") return <div key={cIdx} className="aspect-square rounded-sm" style={{ animation: "trailFire 0.4s ease-out forwards" }} />;
+                if (cell === "exploded") return <div key={cIdx} className="rounded-sm" style={{ ...sz, animation: "cellExplode 0.5s ease-out forwards" }} />;
+                if (cell === "dino-trail") return <div key={cIdx} className="rounded-sm" style={{ ...sz, animation: "trailFire 0.4s ease-out forwards" }} />;
 
                 const isGhost = cell.startsWith("ghost:");
                 const type = isGhost ? cell.split(":")[1]! : cell;
                 return (
                   <div key={cIdx} className={clsx(
-                    "aspect-square rounded-sm border border-white/5 bg-black/40 sm:w-6",
+                    "rounded-sm border border-white/5 bg-black/40",
                     !isGhost && "shadow-inner",
                     !isGhost && `bg-gradient-to-br ${COLORS[type]} drop-shadow`,
                     isGhost && `bg-gradient-to-br ${COLORS[type]} opacity-20`,
-                  )} />
+                  )} style={sz} />
                 );
               })}
             </React.Fragment>
@@ -731,31 +732,20 @@ export default function Tetris() {
       </div>
 
       {/* ── Mobile touch controls ── */}
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-2 lg:hidden">
-        {/* Left: movement */}
-        <div className="flex items-center gap-1.5">
-          <button onClick={() => moveDir(-1)} disabled={gameOver || dinoActive || !running} className={clsx(tBtn, "h-14 w-14")}>{"←"}</button>
-          <div className="flex flex-col gap-1.5">
-            <button onClick={rotateCW} disabled={gameOver || dinoActive || !running} className={clsx(tBtn, "h-10 w-10 text-sm")}>{"↻"}</button>
-            <button onClick={softDrop} disabled={gameOver || dinoActive || !running} className={clsx(tBtn, "h-10 w-10 text-sm")}>{"↓"}</button>
-          </div>
-          <button onClick={() => moveDir(1)} disabled={gameOver || dinoActive || !running} className={clsx(tBtn, "h-14 w-14")}>{"→"}</button>
-        </div>
-
-        {/* Center: hard drop */}
+      <div className="flex items-center justify-center gap-2 px-1 lg:hidden">
+        <button onClick={() => moveDir(-1)} disabled={gameOver || dinoActive || !running} className={clsx(tBtn, "h-11 w-11")}>{"←"}</button>
+        <button onClick={rotateCW} disabled={gameOver || dinoActive || !running} className={clsx(tBtn, "h-11 w-11")}>{"↻"}</button>
+        <button onClick={softDrop} disabled={gameOver || dinoActive || !running} className={clsx(tBtn, "h-11 w-11")}>{"↓"}</button>
+        <button onClick={() => moveDir(1)} disabled={gameOver || dinoActive || !running} className={clsx(tBtn, "h-11 w-11")}>{"→"}</button>
         <button onClick={hardDrop} disabled={gameOver || !running || dinoActive}
-          className={clsx(tBtn, "h-14 w-20 border-cyan-400/30 bg-cyan-500/10 text-cyan-300 text-sm")}>
-          {"⤓"} Drop
+          className={clsx(tBtn, "h-11 w-14 border-cyan-400/30 bg-cyan-500/10 text-cyan-300 text-xs")}>
+          {"⤓"}
         </button>
-
-        {/* Right: dino + reset */}
-        <div className="flex items-center justify-end gap-1.5">
-          <button onClick={activateDino} disabled={dinoCharges <= 0 || dinoActive || gameOver || !running}
-            className={clsx(tBtn, "h-14 w-14", dinoCharges > 0 ? "border-green-400/50 bg-green-500/15 text-green-300" : "")}>
-            {"\u{1F996}"}
-          </button>
-          <button onClick={reset} className={clsx(tBtn, "h-14 w-14 text-sm")}>{"↺"}</button>
-        </div>
+        <button onClick={activateDino} disabled={dinoCharges <= 0 || dinoActive || gameOver || !running}
+          className={clsx(tBtn, "h-11 w-11 text-sm", dinoCharges > 0 ? "border-green-400/50 bg-green-500/15 text-green-300" : "")}>
+          {"\u{1F996}"}
+        </button>
+        <button onClick={reset} className={clsx(tBtn, "h-11 w-11 text-xs")}>{"↺"}</button>
       </div>
 
       {/* ── Side panel (desktop) ── */}
