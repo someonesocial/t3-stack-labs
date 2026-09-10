@@ -18,3 +18,14 @@ model Message {
 
   @@index([createdAt])
 }
+
+model Score {
+  id        Int      @id @default(autoincrement())
+  player    String   @default("anonymous")
+  score     Int
+  lines     Int
+  level     Int
+  createdAt DateTime @default(now())
+
+  @@index([score(sort: Desc)])
+}

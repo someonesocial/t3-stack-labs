@@ -10,7 +10,7 @@ export default function GameClient() {
           <Link href="/" className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white/80 hover:bg-white/20">← Back to home</Link>
         </div>
         <p className="max-w-2xl text-white/60 text-balance">
-          A minimal, type-safe Tetris clone built for this portfolio. Keyboard or on‑screen controls. Shows game loop timing, piece bag randomization and soft drop.
+          Tetris mit Highscores, Achievements im Chat, Level-System und der Dino-Sonderfähigkeit. WASD oder Pfeiltasten, Q für den Dino.
         </p>
       </div>
       <Tetris />
