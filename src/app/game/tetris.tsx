@@ -338,7 +338,7 @@ export default function Tetris() {
         setBoard((prev) => {
           const nb = cloneBoard(prev);
           nb.splice(ROWS - DINO_SPRITE.length, DINO_SPRITE.length);
-          for (let i = 0; i < DINO_SPRITE.length; i++) {
+          for (const _ of DINO_SPRITE) {
             nb.unshift(Array<string | null>(COLS).fill(null));
           }
           return nb;
@@ -383,7 +383,7 @@ export default function Tetris() {
   }, []);
 
   useEffect(() => {
-    const match = document.cookie.match(/chat-author=([^;]+)/);
+    const match = /chat-author=([^;]+)/.exec(document.cookie);
     if (match?.[1]) {
       const name = decodeURIComponent(match[1]);
       setPlayerName(name);
@@ -414,7 +414,7 @@ export default function Tetris() {
         level,
       })
       .then(() => topScores.refetch())
-      .catch(() => {});
+      .catch(() => undefined);
   }, [gameOver, score, lines, level, scoreSubmitted, topScores]);
 
   useEffect(() => {
