@@ -484,48 +484,56 @@ export default function Tetris() {
   const softDrop = () => { if (justLocked.current || dinoActive) return; const n = { ...piece, row: piece.row + 1 }; if (canPlace(board, n)) { setPiece(n); setScore((s) => s + 1); } else lock(piece); };
   const rotateCW = () => { if (justLocked.current || dinoActive) return; attempt({ ...piece, shape: rotate(piece.shape) }); };
 
-  // ── Touch support ──
-  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  // ── Touch support (drag-and-hold for horizontal, swipe down for drop) ──
+  const touchRef = useRef<{ startX: number; startY: number; time: number; lastCol: number; moved: boolean } | null>(null);
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    if ((e.target as HTMLElement).closest("button")) return;
     e.preventDefault();
     const t = e.touches[0];
     if (!t) return;
-    touchStartRef.current = { x: t.clientX, y: t.clientY, time: Date.now() };
+    touchRef.current = { startX: t.clientX, startY: t.clientY, time: Date.now(), lastCol: 0, moved: false };
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
+    if ((e.target as HTMLElement).closest("button")) return;
     e.preventDefault();
+    const ref = touchRef.current;
+    const t = e.touches[0];
+    if (!ref || !t || !running || gameOver || dinoActive) return;
+
+    const cellW = boardRef.current ? boardRef.current.offsetWidth / COLS : 30;
+    const dx = t.clientX - ref.startX;
+    const colDelta = Math.round(dx / cellW);
+    if (colDelta !== ref.lastCol) {
+      const dir = colDelta > ref.lastCol ? 1 : -1;
+      const steps = Math.abs(colDelta - ref.lastCol);
+      for (let i = 0; i < steps; i++) moveDir(dir);
+      ref.lastCol = colDelta;
+      ref.moved = true;
+    }
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
+    if ((e.target as HTMLElement).closest("button")) return;
     e.preventDefault();
-    const start = touchStartRef.current;
+    const ref = touchRef.current;
     const t = e.changedTouches[0];
-    if (!start || !t || !running || gameOver || dinoActive || justLocked.current) return;
-    touchStartRef.current = null;
+    if (!ref || !t) return;
+    touchRef.current = null;
+    if (!running || gameOver || dinoActive || justLocked.current) return;
 
-    const dx = t.clientX - start.x;
-    const dy = t.clientY - start.y;
-    const elapsed = Date.now() - start.time;
-    const absDx = Math.abs(dx);
-    const absDy = Math.abs(dy);
+    const dy = t.clientY - ref.startY;
+    const elapsed = Date.now() - ref.time;
 
-    if (elapsed < 200 && absDx < 20 && absDy < 20) {
+    if (!ref.moved && elapsed < 250 && Math.abs(dy) < 25) {
       rotateCW();
       return;
     }
 
-    const threshold = 30;
-    if (absDx > absDy && absDx > threshold) {
-      if (dx < 0) moveDir(-1);
-      else moveDir(1);
-    } else if (absDy > threshold) {
-      if (dy > 0 && absDy > 60) {
-        hardDrop();
-      } else if (dy > 0) {
-        softDrop();
-      }
+    if (dy > 60) {
+      if (dy > 120 || elapsed < 200) hardDrop();
+      else softDrop();
     }
   };
 
@@ -583,7 +591,7 @@ export default function Tetris() {
         containerRef.current?.focus();
       }}
     >
-      {/* ── Mobile top bar: score + level ── */}
+      {/* ── Mobile top bar: score + level + next ── */}
       <div className="flex items-center justify-between gap-2 lg:hidden">
         <div className="flex items-center gap-3 text-sm">
           <span key={score} className="font-mono font-bold text-white" style={score > 0 ? { animation: "scoreBounce 0.4s ease-out" } : undefined}>
@@ -593,13 +601,27 @@ export default function Tetris() {
           <span className={clsx("font-bold", level >= 4 ? "text-red-400" : level >= 2 ? "text-yellow-300" : "text-white")}>Lv{level}</span>
         </div>
         <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[9px] text-white/30">Next</span>
+            {queue.slice(0, 3).map((t, i) => (
+              <div key={i} className="flex flex-col gap-[1px]">
+                {SHAPES[t]!.map((row, r) => (
+                  <div key={r} className="flex gap-[1px]">
+                    {row.map((cell, c) => (
+                      <div key={c} className={clsx("h-1.5 w-1.5 rounded-[1px] bg-black/30", cell && `bg-gradient-to-br ${COLORS[t]}`)} />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
           {dinoCharges > 0 && (
             <button onClick={activateDino} disabled={dinoActive || !running}
-              className="rounded-lg border border-green-400/50 bg-green-500/20 px-2.5 py-1 text-xs font-bold text-green-300 active:bg-green-500/30">
+              className="rounded-lg border border-green-400/50 bg-green-500/20 px-2 py-1 text-xs font-bold text-green-300 active:bg-green-500/30">
               {"\u{1F996}"}{dinoCharges}
             </button>
           )}
-          <button onClick={() => !gameOver && !dinoActive && setRunning((r) => !r)} className="rounded-lg border border-white/20 bg-white/5 px-2.5 py-1 text-xs text-white/70">
+          <button onClick={() => !gameOver && !dinoActive && setRunning((r) => !r)} className="rounded-lg border border-white/20 bg-white/5 px-2 py-1 text-xs text-white/70">
             {running ? "⏸" : "▶"}
           </button>
         </div>
@@ -608,7 +630,7 @@ export default function Tetris() {
       {/* ── Board ── */}
       <div
         ref={boardRef}
-        className={clsx("glass relative mx-auto rounded-xl p-2 sm:p-4 lg:mx-0", dinoActive && "border-green-500/40")}
+        className={clsx("glass relative w-full rounded-xl p-2 sm:p-3 lg:w-auto lg:max-w-[280px]", dinoActive && "border-green-500/40")}
         style={{
           touchAction: "none",
           ...(dinoActive ? { animation: "dinoShake 0.3s ease-in-out infinite" } : levelUpAnim ? { animation: "levelUpFlash 1.2s ease-out" } : undefined),
@@ -621,13 +643,13 @@ export default function Tetris() {
           {displayBoard.map((row, rIdx) => (
             <React.Fragment key={rIdx}>
               {row.map((cell, cIdx) => {
-                if (!cell) return <div key={cIdx} className="aspect-square w-[min(6vw,1.5rem)] rounded-sm border border-white/5 bg-black/40 sm:w-6" />;
+                if (!cell) return <div key={cIdx} className="aspect-square rounded-sm border border-white/5 bg-black/40 sm:w-6" />;
 
                 if (cell.startsWith("dino:")) {
                   const partType = parseInt(cell.split(":")[1]!, 10);
                   const st = DINO_CELL_STYLES[partType] ?? DINO_CELL_STYLES[1]!;
                   return (
-                    <div key={cIdx} className="aspect-square w-[min(6vw,1.5rem)] rounded-sm sm:w-6"
+                    <div key={cIdx} className="aspect-square rounded-sm"
                       style={{
                         background: st.bg, borderWidth: "2px", borderStyle: "solid", borderColor: st.border,
                         boxShadow: `${st.shadow}, inset 0 0 4px rgba(255,255,255,0.15)`,
@@ -635,14 +657,14 @@ export default function Tetris() {
                       }} />
                   );
                 }
-                if (cell === "exploded") return <div key={cIdx} className="aspect-square w-[min(6vw,1.5rem)] rounded-sm sm:w-6" style={{ animation: "cellExplode 0.5s ease-out forwards" }} />;
-                if (cell === "dino-trail") return <div key={cIdx} className="aspect-square w-[min(6vw,1.5rem)] rounded-sm sm:w-6" style={{ animation: "trailFire 0.4s ease-out forwards" }} />;
+                if (cell === "exploded") return <div key={cIdx} className="aspect-square rounded-sm" style={{ animation: "cellExplode 0.5s ease-out forwards" }} />;
+                if (cell === "dino-trail") return <div key={cIdx} className="aspect-square rounded-sm" style={{ animation: "trailFire 0.4s ease-out forwards" }} />;
 
                 const isGhost = cell.startsWith("ghost:");
                 const type = isGhost ? cell.split(":")[1]! : cell;
                 return (
                   <div key={cIdx} className={clsx(
-                    "aspect-square w-[min(6vw,1.5rem)] rounded-sm border border-white/5 bg-black/40 sm:w-6",
+                    "aspect-square rounded-sm border border-white/5 bg-black/40 sm:w-6",
                     !isGhost && "shadow-inner",
                     !isGhost && `bg-gradient-to-br ${COLORS[type]} drop-shadow`,
                     isGhost && `bg-gradient-to-br ${COLORS[type]} opacity-20`,
@@ -867,37 +889,10 @@ export default function Tetris() {
         </div>
       </div>
 
-      {/* ── Mobile bottom panel (collapsible stats) ── */}
-      <div className="space-y-2 px-1 lg:hidden">
-        <div className="glass rounded-xl p-3">
-          <div className="flex items-center gap-3">
-            <input type="text" value={playerName}
-              onChange={(e) => setPlayerName(e.target.value || "anonymous")}
-              maxLength={40}
-              className="flex-1 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-white outline-none focus:border-white/30" placeholder="Spielername" />
-            <div className="flex gap-3 text-[10px] text-white/50">
-              <span>Lv{level + 1} in {nextLevelIn}L</span>
-              <span>{"\u{1F996}"} {dinoCharges > 0 ? `${dinoCharges}x` : `${LINES_PER_DINO - dinoProgress}L`}</span>
-            </div>
-          </div>
-        </div>
-        {/* Next pieces mobile */}
-        <div className="glass flex items-center gap-3 rounded-xl p-2.5">
-          <span className="text-[10px] text-white/40">Next</span>
-          <div className="flex gap-2">
-            {queue.slice(0, 3).map((t, i) => (
-              <div key={i} className="flex flex-col gap-[1px]">
-                {SHAPES[t]!.map((row, r) => (
-                  <div key={r} className="flex gap-[1px]">
-                    {row.map((cell, c) => (
-                      <div key={c} className={clsx("h-2 w-2 rounded-[1px] bg-black/40", cell && `bg-gradient-to-br ${COLORS[t]}`)} />
-                    ))}
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* ── Mobile bottom info ── */}
+      <div className="flex items-center justify-between gap-2 px-1 text-[10px] text-white/40 lg:hidden">
+        <span>{playerName}</span>
+        <span>Lv{level + 1} in {nextLevelIn}L &middot; {"\u{1F996}"} {dinoCharges > 0 ? `${dinoCharges}x bereit` : `in ${LINES_PER_DINO - dinoProgress}L`}</span>
       </div>
     </div>
   );
