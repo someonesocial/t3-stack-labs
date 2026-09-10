@@ -483,60 +483,112 @@ export default function Tetris() {
   const softDrop = () => { if (justLocked.current || dinoActive) return; const n = { ...piece, row: piece.row + 1 }; if (canPlace(board, n)) { setPiece(n); setScore((s) => s + 1); } else lock(piece); };
   const rotateCW = () => { if (justLocked.current || dinoActive) return; attempt({ ...piece, shape: rotate(piece.shape) }); };
 
+  // ── Touch support ──
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    if (!t) return;
+    touchStartRef.current = { x: t.clientX, y: t.clientY, time: Date.now() };
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const start = touchStartRef.current;
+    const t = e.changedTouches[0];
+    if (!start || !t || !running || gameOver || dinoActive || justLocked.current) return;
+    touchStartRef.current = null;
+
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    const elapsed = Date.now() - start.time;
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+
+    if (elapsed < 200 && absDx < 20 && absDy < 20) {
+      rotateCW();
+      return;
+    }
+
+    const threshold = 30;
+    if (absDx > absDy && absDx > threshold) {
+      if (dx < 0) moveDir(-1);
+      else moveDir(1);
+    } else if (absDy > threshold) {
+      if (dy > 0 && absDy > 60) {
+        hardDrop();
+      } else if (dy > 0) {
+        softDrop();
+      }
+    }
+  };
+
+  const tBtn = "flex items-center justify-center rounded-xl border border-white/20 bg-white/5 text-base font-bold text-white/80 active:bg-white/15 active:scale-95 transition-all select-none touch-manipulation disabled:opacity-30";
+
   return (
     <div
       ref={containerRef}
-      className="flex flex-col gap-6 lg:flex-row outline-none"
+      className="flex flex-col gap-3 outline-none lg:flex-row lg:gap-6"
       tabIndex={0}
       role="application"
       aria-label="Tetris game. Arrow keys or WASD to move, Space for hard drop, Q for dino, P to pause."
       onClick={() => containerRef.current?.focus()}
     >
+      {/* ── Mobile top bar: score + level ── */}
+      <div className="flex items-center justify-between gap-2 lg:hidden">
+        <div className="flex items-center gap-3 text-sm">
+          <span key={score} className="font-mono font-bold text-white" style={score > 0 ? { animation: "scoreBounce 0.4s ease-out" } : undefined}>
+            {score.toLocaleString()}
+          </span>
+          <span className="text-white/40">L{lines}</span>
+          <span className={clsx("font-bold", level >= 4 ? "text-red-400" : level >= 2 ? "text-yellow-300" : "text-white")}>Lv{level}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          {dinoCharges > 0 && (
+            <button onClick={activateDino} disabled={dinoActive || !running}
+              className="rounded-lg border border-green-400/50 bg-green-500/20 px-2.5 py-1 text-xs font-bold text-green-300 active:bg-green-500/30">
+              {"\u{1F996}"}{dinoCharges}
+            </button>
+          )}
+          <button onClick={() => !gameOver && !dinoActive && setRunning((r) => !r)} className="rounded-lg border border-white/20 bg-white/5 px-2.5 py-1 text-xs text-white/70">
+            {running ? "⏸" : "▶"}
+          </button>
+        </div>
+      </div>
+
       {/* ── Board ── */}
       <div
         ref={boardRef}
-        className={clsx("glass relative rounded-xl p-4", dinoActive && "border-green-500/40")}
+        className={clsx("glass relative mx-auto rounded-xl p-2 sm:p-4 lg:mx-0", dinoActive && "border-green-500/40")}
         style={dinoActive ? { animation: "dinoShake 0.3s ease-in-out infinite" } : levelUpAnim ? { animation: "levelUpFlash 1.2s ease-out" } : undefined}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
-        <div className="grid grid-cols-10 gap-[3px]">
+        <div className="grid grid-cols-10 gap-[2px] sm:gap-[3px]">
           {displayBoard.map((row, rIdx) => (
             <React.Fragment key={rIdx}>
               {row.map((cell, cIdx) => {
-                if (!cell) return <div key={cIdx} className="aspect-square w-6 rounded-sm border border-white/5 bg-black/40" />;
+                if (!cell) return <div key={cIdx} className="aspect-square w-[min(6vw,1.5rem)] rounded-sm border border-white/5 bg-black/40 sm:w-6" />;
 
                 if (cell.startsWith("dino:")) {
                   const partType = parseInt(cell.split(":")[1]!, 10);
                   const st = DINO_CELL_STYLES[partType] ?? DINO_CELL_STYLES[1]!;
                   return (
-                    <div key={cIdx} className="aspect-square w-6 rounded-sm"
+                    <div key={cIdx} className="aspect-square w-[min(6vw,1.5rem)] rounded-sm sm:w-6"
                       style={{
-                        background: st.bg,
-                        borderWidth: "2px",
-                        borderStyle: "solid",
-                        borderColor: st.border,
+                        background: st.bg, borderWidth: "2px", borderStyle: "solid", borderColor: st.border,
                         boxShadow: `${st.shadow}, inset 0 0 4px rgba(255,255,255,0.15)`,
                         animation: "dinoCell 0.12s ease-in-out infinite alternate",
                       }} />
                   );
                 }
-                if (cell === "exploded") {
-                  return (
-                    <div key={cIdx} className="aspect-square w-6 rounded-sm"
-                      style={{ animation: "cellExplode 0.5s ease-out forwards" }} />
-                  );
-                }
-                if (cell === "dino-trail") {
-                  return (
-                    <div key={cIdx} className="aspect-square w-6 rounded-sm"
-                      style={{ animation: "trailFire 0.4s ease-out forwards" }} />
-                  );
-                }
+                if (cell === "exploded") return <div key={cIdx} className="aspect-square w-[min(6vw,1.5rem)] rounded-sm sm:w-6" style={{ animation: "cellExplode 0.5s ease-out forwards" }} />;
+                if (cell === "dino-trail") return <div key={cIdx} className="aspect-square w-[min(6vw,1.5rem)] rounded-sm sm:w-6" style={{ animation: "trailFire 0.4s ease-out forwards" }} />;
 
                 const isGhost = cell.startsWith("ghost:");
                 const type = isGhost ? cell.split(":")[1]! : cell;
                 return (
                   <div key={cIdx} className={clsx(
-                    "aspect-square w-6 rounded-sm border border-white/5 bg-black/40",
+                    "aspect-square w-[min(6vw,1.5rem)] rounded-sm border border-white/5 bg-black/40 sm:w-6",
                     !isGhost && "shadow-inner",
                     !isGhost && `bg-gradient-to-br ${COLORS[type]} drop-shadow`,
                     isGhost && `bg-gradient-to-br ${COLORS[type]} opacity-20`,
@@ -550,12 +602,7 @@ export default function Tetris() {
         {/* Debris particles */}
         {debris.map((p) => (
           <div key={p.id} className="pointer-events-none absolute z-30 h-2 w-2 rounded-full"
-            style={{
-              left: `${p.x}px`, top: `${p.y}px`,
-              backgroundColor: p.color,
-              boxShadow: `0 0 6px ${p.color}`,
-              animation: `debrisfly${p.variant} 0.7s ease-out forwards`,
-            }} />
+            style={{ left: `${p.x}px`, top: `${p.y}px`, backgroundColor: p.color, boxShadow: `0 0 6px ${p.color}`, animation: `debrisfly${p.variant} 0.7s ease-out forwards` }} />
         ))}
 
         {/* Score popups */}
@@ -563,69 +610,94 @@ export default function Tetris() {
           <div key={popup.id} className="pointer-events-none absolute left-1/2 z-20"
             style={{ top: `${popup.y}px`, animation: "scoreFloat 1.6s ease-out forwards" }}>
             <div className={clsx("font-black tracking-tight whitespace-nowrap",
-              popup.points >= 2700 ? "text-4xl text-yellow-300 drop-shadow-[0_0_16px_rgba(250,204,21,0.7)]" :
-              popup.points >= 900 ? "text-3xl text-purple-300 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]" :
-              popup.points >= 300 ? "text-2xl text-cyan-300 drop-shadow-[0_0_6px_rgba(34,211,238,0.4)]" :
-              "text-xl text-white")}>
+              popup.points >= 2700 ? "text-3xl text-yellow-300 drop-shadow-[0_0_16px_rgba(250,204,21,0.7)] sm:text-4xl" :
+              popup.points >= 900 ? "text-2xl text-purple-300 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)] sm:text-3xl" :
+              popup.points >= 300 ? "text-xl text-cyan-300 sm:text-2xl" : "text-lg text-white sm:text-xl")}>
               +{popup.points.toLocaleString()}
             </div>
-            {popup.label && <div className="text-center text-sm font-black text-white">{popup.label}</div>}
+            {popup.label && <div className="text-center text-xs font-black text-white sm:text-sm">{popup.label}</div>}
           </div>
         ))}
 
         {/* Achievement toasts */}
-        <div className="absolute right-2 top-2 z-20 flex flex-col gap-2">
+        <div className="absolute right-1 top-1 z-20 flex flex-col gap-1 sm:right-2 sm:top-2 sm:gap-2">
           {achievementToasts.map((toast) => (
-            <div key={toast.id} className="rounded-lg border border-yellow-400/40 bg-black/90 px-3 py-2 shadow-lg shadow-yellow-500/20 backdrop-blur"
+            <div key={toast.id} className="rounded-lg border border-yellow-400/40 bg-black/90 px-2 py-1.5 shadow-lg shadow-yellow-500/20 backdrop-blur sm:px-3 sm:py-2"
               style={{ animation: "achievementSlide 3.5s ease-in-out forwards" }}>
-              <div className="text-sm font-black text-yellow-300">{toast.icon} {toast.label}</div>
-              <div className="text-[10px] text-white/60">{toast.desc}</div>
+              <div className="text-xs font-black text-yellow-300 sm:text-sm">{toast.icon} {toast.label}</div>
+              <div className="text-[9px] text-white/60 sm:text-[10px]">{toast.desc}</div>
             </div>
           ))}
         </div>
 
         <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-white/10" />
 
-        {/* Level-up banner */}
         {levelUpAnim > 0 && (
-          <div className="pointer-events-none absolute inset-x-0 top-1/3 z-20 text-center"
-            style={{ animation: "scoreFloat 1.5s ease-out forwards" }}>
-            <div className="text-4xl font-black text-purple-300 drop-shadow-[0_0_20px_rgba(168,85,247,0.6)]">
-              LEVEL {levelUpAnim}!
-            </div>
-            <div className="text-sm font-bold text-white/70">Speed Up!</div>
+          <div className="pointer-events-none absolute inset-x-0 top-1/3 z-20 text-center" style={{ animation: "scoreFloat 1.5s ease-out forwards" }}>
+            <div className="text-3xl font-black text-purple-300 drop-shadow-[0_0_20px_rgba(168,85,247,0.6)] sm:text-4xl">LEVEL {levelUpAnim}!</div>
+            <div className="text-xs font-bold text-white/70 sm:text-sm">Speed Up!</div>
           </div>
         )}
 
-        {/* Game over overlay */}
         {gameOver && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 rounded-xl bg-black/80 p-6 text-center backdrop-blur-sm">
-            <h2 className="text-3xl font-black text-white">Game Over</h2>
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-xl bg-black/80 p-4 text-center backdrop-blur-sm sm:gap-4 sm:p-6">
+            <h2 className="text-2xl font-black text-white sm:text-3xl">Game Over</h2>
             <div className="space-y-1">
-              <p className="text-2xl font-bold text-yellow-300">{score.toLocaleString()} Punkte</p>
-              <p className="text-sm text-white/60">Level {level} &middot; {lines} Lines</p>
+              <p className="text-xl font-bold text-yellow-300 sm:text-2xl">{score.toLocaleString()} Punkte</p>
+              <p className="text-xs text-white/60 sm:text-sm">Level {level} &middot; {lines} Lines</p>
             </div>
             {submitScoreMut.isPending && <p className="text-xs text-white/40">Score wird gespeichert...</p>}
-            {submitScoreMut.isSuccess && <p className="text-xs text-green-400">&#10003; Score gespeichert &amp; im Chat gepostet!</p>}
+            {submitScoreMut.isSuccess && <p className="text-xs text-green-400">{"✓"} Score gespeichert &amp; im Chat gepostet!</p>}
             {submitScoreMut.isError && <p className="text-xs text-red-400">Score konnte nicht gespeichert werden</p>}
-            <button onClick={reset} className="glass-hover rounded-lg border border-white/30 bg-white/10 px-6 py-2.5 text-sm font-semibold text-white">Nochmal spielen</button>
+            <button onClick={reset} className="glass-hover rounded-lg border border-white/30 bg-white/10 px-5 py-2 text-sm font-semibold text-white">Nochmal</button>
           </div>
         )}
       </div>
 
-      {/* ── Side panel ── */}
-      <div className="flex flex-1 flex-col gap-4 min-w-[260px]">
+      {/* ── Mobile touch controls ── */}
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-2 lg:hidden">
+        {/* Left: movement */}
+        <div className="flex items-center gap-1.5">
+          <button onClick={() => moveDir(-1)} disabled={gameOver || dinoActive || !running} className={clsx(tBtn, "h-14 w-14")}>{"←"}</button>
+          <div className="flex flex-col gap-1.5">
+            <button onClick={rotateCW} disabled={gameOver || dinoActive || !running} className={clsx(tBtn, "h-10 w-10 text-sm")}>{"↻"}</button>
+            <button onClick={softDrop} disabled={gameOver || dinoActive || !running} className={clsx(tBtn, "h-10 w-10 text-sm")}>{"↓"}</button>
+          </div>
+          <button onClick={() => moveDir(1)} disabled={gameOver || dinoActive || !running} className={clsx(tBtn, "h-14 w-14")}>{"→"}</button>
+        </div>
+
+        {/* Center: hard drop */}
+        <button onClick={hardDrop} disabled={gameOver || !running || dinoActive}
+          className={clsx(tBtn, "h-14 w-20 border-cyan-400/30 bg-cyan-500/10 text-cyan-300 text-sm")}>
+          {"⤓"} Drop
+        </button>
+
+        {/* Right: dino + reset */}
+        <div className="flex items-center justify-end gap-1.5">
+          <button onClick={activateDino} disabled={dinoCharges <= 0 || dinoActive || gameOver || !running}
+            className={clsx(tBtn, "h-14 w-14", dinoCharges > 0 ? "border-green-400/50 bg-green-500/15 text-green-300" : "")}>
+            {"\u{1F996}"}
+          </button>
+          <button onClick={reset} className={clsx(tBtn, "h-14 w-14 text-sm")}>{"↺"}</button>
+        </div>
+      </div>
+
+      {/* ── Side panel (desktop) ── */}
+      <div className="hidden flex-1 flex-col gap-3 min-w-[240px] lg:flex">
         {/* Player name */}
-        <div className="glass rounded-xl p-4">
-          <label className="mb-1.5 block text-xs font-medium text-white/50">Spielername</label>
-          <input type="text" value={playerName} onChange={(e) => setPlayerName(e.target.value || "anonymous")} maxLength={40}
+        <div className="glass rounded-xl p-3">
+          <label className="mb-1 block text-xs font-medium text-white/50">Spielername</label>
+          <input type="text" value={playerName}
+            onChange={(e) => setPlayerName(e.target.value || "anonymous")}
+            onBlur={() => containerRef.current?.focus()}
+            onKeyDown={(e) => { if (e.key === "Enter") containerRef.current?.focus(); }}
+            maxLength={40}
             className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white outline-none focus:border-white/30" placeholder="anonymous" />
         </div>
 
         {/* Stats */}
-        <div className="glass rounded-xl p-4">
-          <h2 className="mb-3 text-lg font-semibold">Stats</h2>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-white/70">
+        <div className="glass rounded-xl p-3">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm text-white/70">
             <div>Score</div>
             <div className="text-right">
               <span key={score} className="inline-block font-mono font-bold text-white"
@@ -642,32 +714,30 @@ export default function Tetris() {
               </span>
             </div>
             <div>Speed</div>
-            <div className="text-right font-mono text-white">
+            <div className="text-right font-mono text-white text-xs">
               {tickMs}ms <span className="text-white/40">({(1000 / tickMs).toFixed(1)}/s)</span>
             </div>
           </div>
 
-          {/* Speed progress bar */}
-          <div className="mt-3 rounded-lg border border-purple-500/20 bg-purple-500/5 p-2.5">
+          {/* Speed progress */}
+          <div className="mt-2.5 rounded-lg border border-purple-500/20 bg-purple-500/5 p-2">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-medium text-purple-300">
-                {"\u{1F680}"} N&auml;chstes Level
-              </span>
+              <span className="font-medium text-purple-300">{"\u{1F680}"} Level {level + 1}</span>
               <span className={clsx("font-bold", nextLevelIn <= 5 ? "text-red-400" : nextLevelIn <= 10 ? "text-orange-400" : "text-white/60")}>
                 {nextLevelIn} Lines
               </span>
             </div>
-            <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-white/10">
+            <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
               <div className={clsx("h-full rounded-full transition-all duration-300", nextLevelIn <= 5 ? "bg-gradient-to-r from-red-500 to-orange-400" : "bg-gradient-to-r from-purple-500 to-purple-300")}
                 style={{ width: `${((LINES_PER_LEVEL - nextLevelIn) / LINES_PER_LEVEL) * 100}%` }} />
             </div>
-            <div className="mt-1 text-[10px] text-white/30">
-              Level {level + 1}: {getTickMs(level + 1)}ms ({Math.round((1 - getTickMs(level + 1) / tickMs) * 100)}% schneller)
+            <div className="mt-0.5 text-[10px] text-white/30">
+              {getTickMs(level + 1)}ms ({Math.round((1 - getTickMs(level + 1) / tickMs) * 100)}% schneller)
             </div>
           </div>
 
           {/* Dino charge */}
-          <div className={clsx("mt-2 rounded-lg border p-2.5 transition-colors", dinoCharges > 0 ? "border-green-400/40 bg-green-500/10" : "border-green-500/20 bg-green-500/5")}>
+          <div className={clsx("mt-2 rounded-lg border p-2 transition-colors", dinoCharges > 0 ? "border-green-400/40 bg-green-500/10" : "border-green-500/20 bg-green-500/5")}>
             <div className="flex items-center justify-between text-xs">
               <span className="font-medium text-green-300">{"\u{1F996}"} Dino</span>
               {dinoCharges > 0 ? (
@@ -677,78 +747,102 @@ export default function Tetris() {
               )}
             </div>
             {dinoCharges === 0 && (
-              <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-white/10">
+              <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
                 <div className="h-full rounded-full bg-gradient-to-r from-green-600 to-green-300 transition-all duration-300"
                   style={{ width: `${(dinoProgress / LINES_PER_DINO) * 100}%` }} />
               </div>
             )}
           </div>
 
-          <div className="text-right text-white">
+          <div className="mt-1 text-right text-xs text-white/50">
             {dinoActive ? <span className="font-black text-green-400 animate-pulse">{"\u{1F996}"} RAMPAGE!</span> : running ? "Running" : "Paused"}
           </div>
         </div>
 
-        {/* Controls */}
-        <div className="glass rounded-xl p-4">
-          <div className="flex flex-wrap gap-2">
+        {/* Desktop controls */}
+        <div className="glass rounded-xl p-3">
+          <div className="flex flex-wrap gap-1.5">
             <button onClick={() => !gameOver && !dinoActive && setRunning((r) => !r)} disabled={gameOver || dinoActive}
-              className="glass-hover rounded-md border border-white/20 bg-white/5 px-3 py-1.5 text-xs disabled:opacity-40">
-              {running ? "⏸ Pause" : "▶ Weiter"}
+              className="glass-hover rounded-md border border-white/20 bg-white/5 px-2.5 py-1 text-xs disabled:opacity-40">
+              {running ? "⏸" : "▶"}
             </button>
-            <button onClick={reset} className="glass-hover rounded-md border border-white/20 bg-white/5 px-3 py-1.5 text-xs">{"↺"} Reset</button>
+            <button onClick={reset} className="glass-hover rounded-md border border-white/20 bg-white/5 px-2.5 py-1 text-xs">{"↺"}</button>
             <button onClick={hardDrop} disabled={gameOver || !running || dinoActive}
-              className="glass-hover rounded-md border border-white/20 bg-white/5 px-3 py-1.5 text-xs disabled:opacity-40">{"⤇"} Hard Drop</button>
+              className="glass-hover rounded-md border border-white/20 bg-white/5 px-2.5 py-1 text-xs disabled:opacity-40">Drop</button>
             <button onClick={activateDino} disabled={dinoCharges <= 0 || dinoActive || gameOver || !running}
-              className={clsx("glass-hover rounded-md border px-3 py-1.5 text-xs font-bold disabled:opacity-40 transition-all",
-                dinoCharges > 0 ? "border-green-400/60 bg-green-500/20 text-green-300 shadow-md shadow-green-500/20" : "border-white/20 bg-white/5")}>
-              {"\u{1F996}"} DINO{dinoCharges > 0 && ` (${dinoCharges})`}
+              className={clsx("glass-hover rounded-md border px-2.5 py-1 text-xs font-bold disabled:opacity-40",
+                dinoCharges > 0 ? "border-green-400/60 bg-green-500/20 text-green-300" : "border-white/20 bg-white/5")}>
+              {"\u{1F996}"}{dinoCharges > 0 && ` ${dinoCharges}`}
             </button>
           </div>
-          <div className="mt-4 flex flex-col items-center gap-2">
-            <button onClick={rotateCW} disabled={gameOver || dinoActive} className="glass-hover rounded-md border border-white/20 bg-white/5 px-4 py-2 text-xs disabled:opacity-40">{"↻"} / W</button>
-            <div className="flex items-center gap-3">
-              <button onClick={() => moveDir(-1)} disabled={gameOver || dinoActive} className="glass-hover rounded-md border border-white/20 bg-white/5 px-4 py-2 text-xs disabled:opacity-40">{"←"} A</button>
-              <button onClick={softDrop} disabled={gameOver || dinoActive} className="glass-hover rounded-md border border-white/20 bg-white/5 px-4 py-2 text-xs disabled:opacity-40">{"↓"} S</button>
-              <button onClick={() => moveDir(1)} disabled={gameOver || dinoActive} className="glass-hover rounded-md border border-white/20 bg-white/5 px-4 py-2 text-xs disabled:opacity-40">D {"→"}</button>
-            </div>
-          </div>
-          <p className="mt-3 text-[10px] leading-relaxed text-white/40">
-            {"←"} {"→"} / A D bewegen &middot; {"↑"} / W drehen &middot; {"↓"} / S soft drop &middot; Space hard drop &middot; Q dino &middot; P pause
+          <p className="mt-2 text-[10px] leading-relaxed text-white/40">
+            WASD / Pfeiltasten &middot; Space drop &middot; Q dino &middot; P pause
           </p>
         </div>
 
         {/* Next pieces */}
-        <div className="glass rounded-xl p-4">
-          <h2 className="mb-2 text-sm font-semibold">Next</h2>
-          <div className="flex gap-3">
+        <div className="glass rounded-xl p-3">
+          <h2 className="mb-1.5 text-xs font-semibold text-white/60">Next</h2>
+          <div className="flex gap-2.5">
             {queue.map((t, i) => (
-              <div key={i} className="flex flex-col items-center gap-0.5">
-                <div className="flex flex-col gap-[2px] p-0.5">
-                  {SHAPES[t]!.map((row, r) => (
-                    <div key={r} className="flex gap-[2px]">
-                      {row.map((cell, c) => (
-                        <div key={c} className={clsx("h-3 w-3 rounded-[2px] bg-black/40", cell && `bg-gradient-to-br ${COLORS[t]}`)} />
-                      ))}
-                    </div>
-                  ))}
-                </div>
+              <div key={i} className="flex flex-col gap-[2px]">
+                {SHAPES[t]!.map((row, r) => (
+                  <div key={r} className="flex gap-[2px]">
+                    {row.map((cell, c) => (
+                      <div key={c} className={clsx("h-2.5 w-2.5 rounded-[2px] bg-black/40", cell && `bg-gradient-to-br ${COLORS[t]}`)} />
+                    ))}
+                  </div>
+                ))}
               </div>
             ))}
           </div>
         </div>
 
         {/* High Scores */}
-        <div className="glass rounded-xl p-4">
-          <h2 className="mb-2 text-sm font-semibold">{"\u{1F3C6}"} High Scores</h2>
+        <div className="glass rounded-xl p-3">
+          <h2 className="mb-1.5 text-xs font-semibold text-white/60">{"\u{1F3C6}"} High Scores</h2>
           {topScores.isLoading && <p className="text-xs text-white/40">Laden...</p>}
           {topScores.data?.length === 0 && <p className="text-xs text-white/40">Noch keine Scores</p>}
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {topScores.data?.map((s, i) => (
-              <div key={s.id} className={clsx("flex items-center justify-between text-xs",
-                i === 0 && "font-bold text-yellow-300", i === 1 && "text-gray-300", i === 2 && "text-orange-400", i > 2 && "text-white/60")}>
+              <div key={s.id} className={clsx("flex items-center justify-between text-[11px]",
+                i === 0 && "font-bold text-yellow-300", i === 1 && "text-gray-300", i === 2 && "text-orange-400", i > 2 && "text-white/50")}>
                 <span>{i + 1}. {s.player}</span>
                 <span className="font-mono">{s.score.toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Mobile bottom panel (collapsible stats) ── */}
+      <div className="space-y-2 px-1 lg:hidden">
+        <div className="glass rounded-xl p-3">
+          <div className="flex items-center gap-3">
+            <input type="text" value={playerName}
+              onChange={(e) => setPlayerName(e.target.value || "anonymous")}
+              onBlur={() => containerRef.current?.focus()}
+              maxLength={40}
+              className="flex-1 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-white outline-none focus:border-white/30" placeholder="Spielername" />
+            <div className="flex gap-3 text-[10px] text-white/50">
+              <span>Lv{level + 1} in {nextLevelIn}L</span>
+              <span>{"\u{1F996}"} {dinoCharges > 0 ? `${dinoCharges}x` : `${LINES_PER_DINO - dinoProgress}L`}</span>
+            </div>
+          </div>
+        </div>
+        {/* Next pieces mobile */}
+        <div className="glass flex items-center gap-3 rounded-xl p-2.5">
+          <span className="text-[10px] text-white/40">Next</span>
+          <div className="flex gap-2">
+            {queue.slice(0, 3).map((t, i) => (
+              <div key={i} className="flex flex-col gap-[1px]">
+                {SHAPES[t]!.map((row, r) => (
+                  <div key={r} className="flex gap-[1px]">
+                    {row.map((cell, c) => (
+                      <div key={c} className={clsx("h-2 w-2 rounded-[1px] bg-black/40", cell && `bg-gradient-to-br ${COLORS[t]}`)} />
+                    ))}
+                  </div>
+                ))}
               </div>
             ))}
           </div>
